@@ -6,11 +6,11 @@
 
 ## 🔵 Phase 1: Foundation Setup
 
-- [ ] Initialize Git repo
-- [ ] Setup .gitignore
+- [x] Initialize Git repo
+- [x] Setup `.gitignore`
 - [ ] Create virtual environment
-- [ ] Add requirements.txt
-- [ ] Install psutil
+- [ ] Add `requirements.txt`
+- [ ] Install `psutil`
 - [ ] Setup folder structure exactly as defined
 - [ ] Add README with architecture explanation
 
