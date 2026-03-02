@@ -8,8 +8,8 @@
 
 - [x] Initialize Git repo
 - [x] Setup `.gitignore`
-- [ ] Create virtual environment
-- [ ] Add `requirements.txt`
+- [x] Create virtual environment
+- [x] Add `requirements.txt`
 - [ ] Install `psutil`
 - [ ] Setup folder structure exactly as defined
 - [ ] Add README with architecture explanation
