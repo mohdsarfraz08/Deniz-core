@@ -1,230 +1,99 @@
-🧭 MASTER ROADMAP — assistant-v1
+# ​​🧭 MASTER ROADMAP — assistant-v1
 
-We build in 7 Phases.
+**Guiding Principle:** We build in 7 Phases. Each phase produces a runnable artifact. No feature is started until the previous version is reviewed and stabilized.
 
-Each phase produces something runnable.
+---
 
-No theoretical fluff.
+## 🔵 PHASE 1 — Environment & Foundation ✅
 
-🔵 PHASE 1 — Environment & Foundation ✅ (DONE)
+-    Create project folder structure.
+-    Initialize virtual environment (`venv`).
+-    Install dependencies (`psutil`).
+-    Generate `requirements.txt`.
+-   **Status:** **COMPLETED**
 
-You already completed:
+---
 
-Folder structure
+## 🔵 PHASE 2 — Minimal Vertical Slice (Core Stability) 🛠️
 
-venv
+*Goal: Validate the architecture with a single end-to-end flow.*
 
-psutil install
+-    **Step 2.1 — Implement Core Execution Flow**
+    
+    -    `main.py` & `engine.py` (The heart).
+    -    `core/parser.py` (Intent extraction).
+    -    `core/intent_engine.py` (Logic routing).
+    -    `adapters/base_adapter.py` (**CRITICAL:** Define abstract methods to prevent `AttributeError`).
+    -    `adapters/windows_adapter.py` (Implementation).
+-    **Step 2.2 — Support Basic Intents**
+    
+    -    `greet`: "Hello. System operational."
+    -    `open_app`: (Verified with `code` and `cmd`).
+-    **Step 2.3 — Add Resource Monitoring (CURRENT FOCUS)**
+    
+    -    Measure execution time per intent.
+    -    Log CPU usage delta (Before/After action).
+    -    Output metrics to `logs/session.log`.
 
-requirements.txt
+**🎯 Deliverable:** CLI runs, intents execute without crashes, and performance metrics are logged.
 
-Status: ✔ Completed
+---
 
-🔵 PHASE 2 — Minimal Vertical Slice (Make It Alive)
+## 🔵 PHASE 3 — System Awareness Intents
 
-Goal:
+*Goal: Expand the assistant’s knowledge of the host machine.*
 
-One full working intent through entire architecture.
+-    **New Intents:** `check_cpu`, `check_memory`, `show_time`.
+-    **Update:** `action_registry.py` and `windows_adapter.py`.
+-    **Constraint:** Do NOT modify the core `engine.py` architecture.
 
-Step 2.1 — Implement Core Execution Flow
+**🎯 Deliverable:** A functioning system-monitor assistant.
 
-Implement only:
+---
 
-main.py
+## 🔵 PHASE 4 — Security Layer Activation
 
-engine.py
+*Goal: Protect the host system from malicious or accidental input.*
 
-core/parser.py
+-    **Step 4.1 — Input Validation:** Sanitize strings; block shell injection attempts (`;`, `&&`, `|`).
+-    **Step 4.2 — Permission System:**
+    -    Implement `config/permissions.json`.
+    -    Check permissions before any adapter call.
+    -    Log "Access Denied" for unauthorized attempts.
 
-core/intent_engine.py
+---
 
-core/action_registry.py
+## 🔵 PHASE 5 — Session & Context
 
-adapters/base_adapter.py
+*Goal: Add "Memory" to the conversation.*
 
-adapters/windows_adapter.py
+-    **Session Manager:** Store the last intent/context.
+-    **Contextual Logic:** Support follow-up questions (e.g., "Check CPU" -> "And memory?").
+-    **Constraint:** Use rule-based logic; no background threads yet.
 
-core/monitoring/resource_monitor.py
+---
 
-utils/logger.py
+## 🔵 PHASE 6 — Adapter Expansion (Cross-Platform)
 
-Ignore everything else for now.
+*Goal: Hardware independence.*
 
-Step 2.2 — Support ONE Intent Only
+-    **Linux Adapter:** Implement `linux_adapter.py` following the `BaseAdapter` interface.
+-    **Auto-Detection:** Engine detects OS at runtime and loads the correct adapter.
 
-Choose:
+---
 
-greet ← safest first
+## 🔵 PHASE 7 — Testing & Stability
 
-Test flow:
+*Goal: Production-grade reliability.*
 
-User: hello
-Assistant: Hello. System operational.
+-    **Unit Tests:** Parser and Intent Detection.
+-    **Integration Tests:** Full "User Input -> Action -> Response" flow.
+-    **Command:** Run `pytest` and achieve 80%+ coverage.
 
-If this works, architecture is validated.
+---
 
-Step 2.3 — Add Resource Monitoring
+## 🔥 AFTER v1 IS STABLE
 
-After action executes:
-
-Measure execution time
-
-Measure CPU before/after
-
-Log to logs/session.log
-
-Now your assistant becomes ethically transparent.
-
-🎯 Deliverable of Phase 2:
-
-CLI runs
-
-One intent works
-
-Logging works
-
-Resource monitoring works
-
-🔵 PHASE 3 — System Awareness Intents
-
-Now expand capabilities.
-
-Add:
-
-check_cpu
-
-check_memory
-
-show_time
-
-Update:
-
-intent_engine.py
-
-action_registry.py
-
-windows_adapter.py
-
-Do NOT change engine architecture.
-
-🎯 Deliverable:
-
-You now have a functioning system-monitor assistant.
-
-🔵 PHASE 4 — Security Layer Activation
-
-Now activate:
-
-core/security/
-    permissions.py
-    validator.py
-Step 4.1 — Input Validation
-
-Sanitize:
-
-Remove dangerous patterns
-
-Strip shell injection attempts
-
-Step 4.2 — Permission System
-
-Use:
-
-config/permissions.json
-
-Example:
-
-{
-  "check_cpu": true,
-  "check_memory": true,
-  "open_browser": false
-}
-
-Before executing any action:
-
-Check permission
-
-Deny if disabled
-
-🎯 Deliverable:
-
-Assistant respects user-controlled permission policy.
-
-🔵 PHASE 5 — Session & Context
-
-Now activate:
-
-core/session/session_manager.py
-
-Goal:
-
-Store last intent
-
-Store conversation memory
-
-No background threads
-
-Example:
-
-User: check cpu
-User: and memory?
-
-Assistant understands context.
-
-🎯 Deliverable:
-
-Context-aware rule-based assistant.
-
-🔵 PHASE 6 — Adapter Expansion
-
-Currently you have:
-
-windows_adapter.py
-
-Now implement:
-
-linux_adapter.py
-
-And auto-detect OS inside engine.
-
-This makes assistant platform-independent.
-
-🎯 Deliverable:
-
-Cross-platform offline assistant.
-
-🔵 PHASE 7 — Testing & Stability
-
-Activate:
-
-tests/
-
-Write:
-
-Unit tests for parser
-
-Unit tests for intent detection
-
-Unit tests for permission checks
-
-Integration test for full flow
-
-Run:
-
-pytest
-
-Now your assistant becomes production-quality.
-
-🔥 AFTER v1 IS STABLE
-
-Only then consider:
-
-Voice layer
-
-GUI (Tkinter or PySide)
-
-Local NLP model
-
-Plugin architecture
-
-Packaging into executable
+-    **UI:** GUI (Tkinter/PySide) or Voice Layer.
+-    **NLP:** Integration of local LLM/Model.
+-    **Deployment:** Package into a single `.exe` or binary.

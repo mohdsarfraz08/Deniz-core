@@ -1,0 +1,9 @@
+class SystemExecutor:
+    def open_app(self, app_name: str) -> str:
+        ...
+
+    def close_app(self, app_name: str) -> str:
+        ...
+
+    def get_time(self) -> str:
+        ...
