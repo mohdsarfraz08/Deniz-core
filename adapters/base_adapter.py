@@ -20,3 +20,11 @@ class BaseAdapter(ABC):
     @abstractmethod
     def get_time(self):
         pass
+
+    @abstractmethod
+    def get_cpu_usage(self):
+        pass
+
+    @abstractmethod
+    def get_memory_usage(self):
+        pass

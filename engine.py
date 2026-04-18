@@ -36,9 +36,17 @@ class AssistantEngine:
         try:
             intent = self.parser.parse(text)
 
-        # If you're using ActionRegistry later,
-        # this is where it could integrate.
+            # If you're using ActionRegistry later,
+            # this is where it could integrate.
+            
+            # Phase 2.3: Start tracking
+            self.monitor.start_intent_tracking()
+            
             response = self.intent_engine.execute(intent)
+            
+            # Phase 2.3: Stop tracking and log metrics
+            stats = self.monitor.stop_intent_tracking()
+            logger.info(f"Intent '{intent.intent}' executed in {stats['execution_time']:.4f}s with CPU usage delta: {stats['cpu_usage']}%")
 
             return response
 

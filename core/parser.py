@@ -16,6 +16,7 @@ class CommandParser:
     CLOSE_KEYWORDS = ["close", "quit", "exit"]
     CPU_KEYWORDS = ["cpu", "processor"]
     MEMORY_KEYWORDS = ["memory", "ram"]
+    TIME_KEYWORDS = ["time", "clock"]
     GREET_KEYWORDS = ["hello", "hi"]
 
     def parse(self, text: str) -> Intent:
@@ -45,5 +46,9 @@ class CommandParser:
         # --- Memory ---
         if any(word in text for word in self.MEMORY_KEYWORDS):
             return Intent(intent="get_memory_usage")
+
+        # --- Time ---
+        if any(word in text for word in self.TIME_KEYWORDS):
+            return Intent(intent="get_time")
 
         return Intent(intent="unknown")
