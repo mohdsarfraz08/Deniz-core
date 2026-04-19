@@ -3,3 +3,11 @@ __pycache__/
 *.pyc
 logs/
 *.log
+
+# IDEs
+.vscode/
+.idea/
+.cursor/
+
+
+.pytest_cache/

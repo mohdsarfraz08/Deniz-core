@@ -27,6 +27,12 @@ class CommandParser:
         if text in self.GREET_KEYWORDS:
             return Intent(intent="greet")
 
+        # --- Confirmation replies (must match before unknown / broad keyword checks) ---
+        if text == "yes":
+            return Intent(intent="confirm_yes")
+        if text == "no":
+            return Intent(intent="confirm_no")
+
         # --- Open App ---
         for keyword in self.OPEN_KEYWORDS:
             if text.startswith(keyword + " "):

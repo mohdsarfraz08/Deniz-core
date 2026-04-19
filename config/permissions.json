@@ -1,0 +1,11 @@
+{
+  "greet": true,
+  "open_app": true,
+  "close_app": true,
+  "get_cpu_usage": true,
+  "get_memory_usage": true,
+  "get_time": true,
+  "unknown": false,
+  "confirm_yes": true,
+  "confirm_no": true
+}

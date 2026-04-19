@@ -1,6 +1,6 @@
 # 🚀 Assistant-v1 Development Checklist
 
-> **Status:** All phases complete. v1 criteria satisfied; v2 work may proceed when ready.
+> **Status:** In progress — only items below marked `[x]` are implemented and verified in the repo today.
 
 ---
 
@@ -8,10 +8,10 @@
 
 - [x] Initialize Git repo
 - [x] Setup `.gitignore`
-- [x] Create virtual environment
+- [x] Create virtual environment *(local dev; `venv`/`.venv` ignored — not committed)*
 - [x] Add `requirements.txt`
 - [x] Install `psutil`
-- [x] Setup folder structure exactly as defined
+- [ ] Setup folder structure exactly as defined *(differs from `docs/folder_structure.md`: no `core/security/`, `config/`, `linux_adapter`, etc.)*
 - [x] Add README with architecture explanation
 
 ---
@@ -22,12 +22,12 @@
 
 - [x] Lowercase normalization
 - [x] Trim whitespace
-- [x] Remove unsafe characters
+- [ ] Remove unsafe characters *(only whitespace normalization; no injection / shell-metacharacter stripping)*
 - [x] Unit tests pass
 
 ### Intent Engine (Rule-Based)
 
-- [x] Basic command detection (open, exit, help)
+- [ ] Basic command detection (open, exit, help) *(open/greet/close patterns exist; no `help` intent; CLI handles `exit`/`quit` outside the parser)*
 - [x] Intent mapping system
 - [x] No OS-specific logic inside
 - [x] Unit tests pass
@@ -44,17 +44,17 @@
 
 ### Validator
 
-- [x] Reject empty input
-- [x] Block dangerous shell patterns
-- [x] Unit tests for malicious input
+- [ ] Reject empty input *(skipped in `main` before `handle`; not centralized in parser/engine)*
+- [ ] Block dangerous shell patterns
+- [ ] Unit tests for malicious input
 
 ### Permissions
 
-- [x] Load permissions.json
-- [x] Validate intent against whitelist
-- [x] Deny by default if missing
-- [x] Unit tests pass
-- [x] Confirm permission check happens BEFORE execution
+- [ ] Load permissions.json
+- [ ] Validate intent against whitelist
+- [ ] Deny by default if missing
+- [ ] Unit tests pass
+- [ ] Confirm permission check happens BEFORE execution
 
 ---
 
@@ -62,8 +62,8 @@
 
 - [x] Implement BaseAdapter (abstract class)
 - [x] Implement Windows adapter
-- [x] Implement Linux adapter
-- [x] Dynamic OS detection
+- [ ] Implement Linux adapter
+- [ ] Dynamic OS detection *(engine instantiates `WindowsAdapter` directly)*
 - [x] No platform logic in core
 
 ---
@@ -75,33 +75,33 @@
 - [x] Measure execution time delta
 - [x] Measure CPU usage delta
 - [x] Return metrics dictionary
-- [x] Unit test validation
+- [ ] Unit test validation *(no `test_resource_monitor` / dedicated tests)*
 
 ### Logger
 
 - [x] Log actions safely
-- [x] Do not log raw shell input if disabled
-- [x] Respect settings.json flags
+- [ ] Do not log raw shell input if disabled *(no toggle; no `settings.json`)*
+- [ ] Respect settings.json flags
 
 ---
 
 ## 🔵 Phase 6: Integration Testing
 
-- [x] Test full flow pipeline
-- [x] Simulate blocked permission
-- [x] Simulate allowed execution
-- [x] Validate metrics recorded
-- [x] Validate logs written
+- [ ] Test full flow pipeline
+- [ ] Simulate blocked permission
+- [ ] Simulate allowed execution
+- [ ] Validate metrics recorded
+- [ ] Validate logs written
 
 ---
 
 ## 🔵 Phase 7: Ethics Validation
 
-- [x] No background loops running
+- [x] No background loops running *(only interactive CLI loop)*
 - [x] No hidden monitoring
-- [x] Resource monitor runs only after execution
-- [x] Permissions default to False
-- [x] System fails safely
+- [ ] Resource monitor runs only after execution *(tracking starts before intent execution in `engine.py`)*
+- [ ] Permissions default to False *(permissions system not implemented)*
+- [x] System fails safely *(errors caught; user-facing fallback messages)*
 
 ---
 
@@ -111,10 +111,10 @@ You can say v1 is complete ONLY IF:
 
 - [x] CLI works
 - [x] Rule-based intent works
-- [x] Permission firewall works
-- [x] Adapter abstraction works
+- [ ] Permission firewall works
+- [x] Adapter abstraction works *(Windows implementation; Linux not present)*
 - [x] Resource transparency works
 - [x] Logs visible to user
-- [x] All tests pass
+- [x] All tests pass *(run `pytest tests/` — 4 unit tests as of last run)*
 - [x] No hidden CPU usage
 - [x] Clean code (no spaghetti architecture)

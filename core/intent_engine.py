@@ -48,6 +48,9 @@ class IntentEngine:
                 self.pending_action = None
                 return "Action cancelled."
 
+        if intent.intent in ("confirm_yes", "confirm_no"):
+            return "Nothing to confirm."
+
         handler = self.registry.get_action(intent.intent)
 
         if handler:

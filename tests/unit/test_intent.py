@@ -51,3 +51,24 @@ def test_intent_engine_phase3_alias_actions():
     assert engine.execute(Intent(intent="check_cpu")) == "Current CPU usage: 10%"
     assert engine.execute(Intent(intent="check_memory")) == "Current Memory usage: 40%"
     assert engine.execute(Intent(intent="show_time")) == "Current time is 10:00:00."
+
+
+def test_parser_confirm_yes_no():
+    parser = CommandParser()
+    assert parser.parse("yes").intent == "confirm_yes"
+    assert parser.parse("no").intent == "confirm_no"
+
+
+def test_intent_engine_confirm_explorer_flow():
+    engine = IntentEngine(system_executor=FakeExecutor())
+
+    assert engine.execute(Intent(intent="close_app", target="explorer")).startswith(
+        "Explorer is a critical process"
+    )
+    assert engine.execute(Intent(intent="confirm_yes")) == "explorer closed."
+    assert engine.execute(Intent(intent="confirm_no")) == "Nothing to confirm."
+
+
+def test_intent_engine_confirm_without_pending():
+    engine = IntentEngine(system_executor=FakeExecutor())
+    assert engine.execute(Intent(intent="confirm_yes")) == "Nothing to confirm."
