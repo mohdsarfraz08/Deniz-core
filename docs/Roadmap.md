@@ -29,7 +29,7 @@
     
     -    `greet`: "Hello. System operational."
     -    `open_app`: (Verified with `code` and `cmd`).
--    **Step 2.3 — Add Resource Monitoring (CURRENT FOCUS)**
+-    **Step 2.3 — Add Resource Monitoring**
     
     -    Measure execution time per intent.
     -    Log CPU usage delta (Before/After action).

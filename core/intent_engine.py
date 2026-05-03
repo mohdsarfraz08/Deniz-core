@@ -1,5 +1,9 @@
 # core/intent_engine.py
 
+from core.intent_resolution import (
+    format_close_file_explorer_message,
+    is_file_explorer_window_target,
+)
 from core.parser import Intent
 from core.action_registry import ActionRegistry
 from core.system_executor import SystemExecutor
@@ -72,15 +76,14 @@ class IntentEngine:
         return self.system_executor.open_app(intent.target)
 
     def _handle_close_app(self, intent):
-        app = intent.target.lower()
+        if not intent.target:
+            return "No application specified."
 
-        if app in ["explorer"]:
-        # store action
-            self.pending_action = lambda: self.system_executor.close_app(app)
+        if is_file_explorer_window_target(intent.target):
+            result = self.system_executor.close_file_explorer_windows()
+            return format_close_file_explorer_message(result)
 
-            return "Explorer is a critical process. Confirm? (yes/no)"
-
-        return self.system_executor.close_app(app)
+        return self.system_executor.close_app(intent.target)
 
     def _handle_get_time(self, intent: Intent = None) -> str:
         return self.system_executor.get_time()

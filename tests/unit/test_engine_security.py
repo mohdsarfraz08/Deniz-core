@@ -14,6 +14,13 @@ class FakeExecutor:
     def close_app(self, app_name: str) -> str:
         return f"{app_name} closed."
 
+    def close_file_explorer_windows(self):
+        return {
+            "status": "success",
+            "action": "close_file_explorer_windows",
+            "count": 0,
+        }
+
     def get_time(self) -> str:
         return "Current time is 10:00:00."
 

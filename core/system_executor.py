@@ -1,5 +1,7 @@
 from typing import Protocol
 
+from core.action_results import CloseFileExplorerWindowsResult
+
 
 class SystemExecutor(Protocol):
     """Contract that all platform adapters should satisfy."""
@@ -8,6 +10,9 @@ class SystemExecutor(Protocol):
         ...
 
     def close_app(self, app_name: str) -> str:
+        ...
+
+    def close_file_explorer_windows(self) -> CloseFileExplorerWindowsResult:
         ...
 
     def get_time(self) -> str:

@@ -1,8 +1,9 @@
 from .base_adapter import BaseAdapter
-import subprocess
 import os
 import datetime
 import psutil
+
+from core.executor.window_executor import close_file_explorer_windows_impl
 
 CRITICAL_PROCESSES = [
     "explorer.exe",
@@ -26,6 +27,9 @@ class WindowsAdapter(BaseAdapter):
 
     
 
+    def close_file_explorer_windows(self):
+        return close_file_explorer_windows_impl()
+
     def close_app(self, app_name: str):
         target_app = app_name.lower()
 
@@ -33,6 +37,8 @@ class WindowsAdapter(BaseAdapter):
             target_app += '.exe'
 
         if target_app in CRITICAL_PROCESSES:
+            if target_app == "explorer.exe":
+                return "Use window-level close for File Explorer."
             return f"Blocked: {target_app} is a critical system process."
 
         found = False

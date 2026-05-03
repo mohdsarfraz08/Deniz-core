@@ -3,7 +3,6 @@ from core.action_results import CloseFileExplorerWindowsResult
 EXPLORER_ALIASES: frozenset[str] = frozenset(
     {
         "explorer",
-        "explorer.exe",
         "file explorer",
         "file manager",
         "windows explorer",

@@ -17,10 +17,8 @@ def close_file_explorer_windows_impl() -> CloseFileExplorerWindowsResult:
             "status": "error",
             "action": "close_file_explorer_windows",
             "count": 0,
-            "detail": "File Explorer control is not supported on this system.",
+            "detail": "win32com not found. Install pywin32 to use this feature.",
         }
-
-    action: CloseFileExplorerWindowsResult["action"] = "close_file_explorer_windows"
 
     try:
         shell = win32com.client.Dispatch("Shell.Application")
@@ -28,7 +26,7 @@ def close_file_explorer_windows_impl() -> CloseFileExplorerWindowsResult:
     except Exception as e:
         return {
             "status": "error",
-            "action": action,
+            "action": "close_file_explorer_windows",
             "count": 0,
             "detail": f"Could not access Shell windows: {e}",
         }
@@ -39,7 +37,7 @@ def close_file_explorer_windows_impl() -> CloseFileExplorerWindowsResult:
     except Exception:
         count = 0
 
-    for i in range(count):
+    for i in reversed(range(count)):
         try:
             window = windows.Item(i)
         except Exception:
@@ -54,7 +52,7 @@ def close_file_explorer_windows_impl() -> CloseFileExplorerWindowsResult:
 
     return {
         "status": "success",
-        "action": action,
+        "action": "close_file_explorer_windows",
         "count": closed,
     }
 
