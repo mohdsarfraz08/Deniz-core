@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "assistant-v1"
+version = "0.1.0"
+description = "Rule-based CLI assistant (intent → core → OS adapters)"
+readme = "Readme.md"
+requires-python = ">=3.10"
+dependencies = [
+    "psutil==7.2.2",
+    "pywin32>=306",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools]
+py-modules = ["engine"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Resolve imports when tests run before an editable install (CI bootstrap).
+pythonpath = ["src"]

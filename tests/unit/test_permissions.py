@@ -22,3 +22,18 @@ def test_permission_checker_explicit_false(tmp_path: Path) -> None:
     checker = PermissionChecker(config_path=p)
 
     assert checker.is_allowed("greet") is False
+
+
+def test_permission_checker_invalid_json_raises(tmp_path: Path) -> None:
+    p = tmp_path / "perm.json"
+    p.write_text("{ not json", encoding="utf-8")
+    with pytest.raises(json.JSONDecodeError):
+        PermissionChecker(config_path=p)
+
+
+def test_permission_checker_ignores_non_bool_values(tmp_path: Path) -> None:
+    p = tmp_path / "perm.json"
+    p.write_text(json.dumps({"greet": True, "open_app": "yes"}), encoding="utf-8")
+    checker = PermissionChecker(config_path=p)
+    assert checker.is_allowed("greet") is True
+    assert checker.is_allowed("open_app") is False

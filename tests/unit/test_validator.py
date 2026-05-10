@@ -37,9 +37,17 @@ def test_validate_rejects_empty() -> None:
         "echo `id`",
         "$(whoami)",
         "a\nb",
+        "before$(touch x)after",
+        "rev`pwd`",
     ],
 )
 def test_validate_rejects_injection_patterns(text: str) -> None:
     ok, err = validate_input(text)
     assert ok is False
     assert "disallowed" in err.lower()
+
+
+def test_validate_allows_unicode_but_not_newlines() -> None:
+    ok, err = validate_input("héllo café")
+    assert ok is True
+    assert err == ""

@@ -1,6 +1,13 @@
-.venv/
+# Python
 __pycache__/
 *.pyc
+
+
+# Virtual Environment
+.venv/
+
+
+# Logging
 logs/
 *.log
 
@@ -9,5 +16,12 @@ logs/
 .idea/
 .cursor/
 
-
+# Testing
 .pytest_cache/
+
+# Packaging (editable / wheel builds)
+*.egg-info/
+build/
+dist/
+
+.coverage

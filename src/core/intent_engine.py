@@ -58,7 +58,7 @@ class IntentEngine:
         handler = self.registry.get_action(intent.intent)
 
         if handler:
-            return handler(intent) if intent.target else handler()
+            return handler(intent)
 
         return "Unknown intent"
 

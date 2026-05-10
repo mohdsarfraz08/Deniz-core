@@ -1,6 +1,7 @@
 from core.intent_resolution import (
     format_close_file_explorer_message,
     is_file_explorer_window_target,
+    terminal_close_request_key,
 )
 from core.action_results import CloseFileExplorerWindowsResult
 
@@ -33,3 +34,24 @@ def test_format_close_file_explorer_message_error():
         "detail": "COM failed",
     }
     assert format_close_file_explorer_message(r) == "COM failed"
+
+
+def test_terminal_close_request_key_aliases():
+    assert terminal_close_request_key("powershell") == "powershell"
+    assert terminal_close_request_key("Windows PowerShell") == "powershell"
+    assert terminal_close_request_key("pwsh") == "pwsh"
+    assert terminal_close_request_key("terminal") == "terminal"
+    assert terminal_close_request_key("Windows Terminal") == "terminal"
+    assert terminal_close_request_key("notepad") is None
+
+
+def test_format_close_file_explorer_message_error_without_detail():
+    r: CloseFileExplorerWindowsResult = {
+        "status": "error",
+        "action": "close_file_explorer_windows",
+        "count": 0,
+    }
+    assert (
+        format_close_file_explorer_message(r)
+        == "Could not close File Explorer windows."
+    )

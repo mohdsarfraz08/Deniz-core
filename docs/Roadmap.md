@@ -2,6 +2,8 @@
 
 **Guiding Principle:** We build in 7 Phases. Each phase produces a runnable artifact. No feature is started until the previous version is reviewed and stabilized.
 
+**Implementation snapshot (kept in sync with the repo):** Phases 1–5 are done. Phase 6 is not started. Phase 7 has a growing `pytest` suite; the 80% coverage target is still a goal (run with `pytest-cov` when added to the environment).
+
 ---
 
 ## 🔵 PHASE 1 — Environment & Foundation ✅
@@ -14,21 +16,22 @@
 
 ---
 
-## 🔵 PHASE 2 — Minimal Vertical Slice (Core Stability) 🛠️
+## 🔵 PHASE 2 — Minimal Vertical Slice (Core Stability) ✅
 
 *Goal: Validate the architecture with a single end-to-end flow.*
 
 -    **Step 2.1 — Implement Core Execution Flow**
     
-    -    `main.py` & `engine.py` (The heart).
+    -    `main.py` & `engine.py` (orchestration).
     -    `core/parser.py` (Intent extraction).
-    -    `core/intent_engine.py` (Logic routing).
-    -    `adapters/base_adapter.py` (**CRITICAL:** Define abstract methods to prevent `AttributeError`).
-    -    `adapters/windows_adapter.py` (Implementation).
+    -    `core/intent_engine.py` (Logic routing via `ActionRegistry`).
+    -    `core/system_executor.py` (adapter-facing executor).
+    -    `adapters/base_adapter.py` (**CRITICAL:** abstract contract for adapters).
+    -    `adapters/windows_adapter.py` (Windows implementation).
 -    **Step 2.2 — Support Basic Intents**
     
     -    `greet`: "Hello. System operational."
-    -    `open_app`: (Verified with `code` and `cmd`).
+    -    `open_app` / `close_app` (including guarded flows such as File Explorer handling in `core/intent_resolution.py`).
 -    **Step 2.3 — Add Resource Monitoring**
     
     -    Measure execution time per intent.
@@ -37,39 +40,46 @@
 
 **🎯 Deliverable:** CLI runs, intents execute without crashes, and performance metrics are logged.
 
+-   **Status:** **COMPLETED**
+
 ---
 
-## 🔵 PHASE 3 — System Awareness Intents
+## 🔵 PHASE 3 — System Awareness Intents ✅
 
 *Goal: Expand the assistant’s knowledge of the host machine.*
 
--    **New Intents:** `check_cpu`, `check_memory`, `show_time`.
--    **Update:** `action_registry.py` and `windows_adapter.py`.
--    **Constraint:** Do NOT modify the core `engine.py` architecture.
+-    **New Intents:** `check_cpu`, `check_memory`, `show_time` (registered alongside `get_cpu_usage`, `get_memory_usage`, `get_time` in `intent_engine.py`).
+-    **Update:** `action_registry.py`, `windows_adapter.py`, and parser keyword routing in `core/parser.py`.
+-    **Constraint:** Original note was to avoid destabilizing routing; intent detection remains in `CommandParser`, execution in `IntentEngine`.
 
 **🎯 Deliverable:** A functioning system-monitor assistant.
 
+-   **Status:** **COMPLETED**
+
 ---
 
-## 🔵 PHASE 4 — Security Layer Activation
+## 🔵 PHASE 4 — Security Layer Activation ✅
 
 *Goal: Protect the host system from malicious or accidental input.*
 
--    **Step 4.1 — Input Validation:** Sanitize strings; block shell injection attempts (`;`, `&&`, `|`).
+-    **Step 4.1 — Input Validation:** `core/security` input validation blocks risky patterns (e.g. shell injection) before parsing.
 -    **Step 4.2 — Permission System:**
-    -    Implement `config/permissions.json`.
-    -    Check permissions before any adapter call.
-    -    Log "Access Denied" for unauthorized attempts.
+    -    `config/permissions.json` with `core/security/permissions.py` (`PermissionChecker`).
+    -    `AssistantEngine.handle` checks permissions after parse and before execution; denied intents return a user-facing message and are logged.
+
+-   **Status:** **COMPLETED**
 
 ---
 
-## 🔵 PHASE 5 — Session & Context
+## 🔵 PHASE 5 — Session & Context ✅
 
 *Goal: Add "Memory" to the conversation.*
 
--    **Session Manager:** Store the last intent/context.
--    **Contextual Logic:** Support follow-up questions (e.g., "Check CPU" -> "And memory?").
--    **Constraint:** Use rule-based logic; no background threads yet.
+-    **Session Manager:** `core/session_context.py` (`SessionManager`) stores the last successful intent and last app target after each completed turn.
+-    **Contextual Logic:** Rule-based `enrich()` after parse — e.g. bare follow-ups (`also`, `and?`, `what else`) alternate system metrics after CPU/memory/time; pronoun `close it` / `close that` resolves to the last opened app; `launch it again` / `open it again` reopens the last app (including after a close).
+-    **Constraint:** Rule-based only; no background threads.
+
+-   **Status:** **COMPLETED** (session is separate from `logs/session.log`, which remains operational logging only.)
 
 ---
 
@@ -80,15 +90,19 @@
 -    **Linux Adapter:** Implement `linux_adapter.py` following the `BaseAdapter` interface.
 -    **Auto-Detection:** Engine detects OS at runtime and loads the correct adapter.
 
+-   **Status:** **NOT STARTED** (Windows adapter only today.)
+
 ---
 
-## 🔵 PHASE 7 — Testing & Stability
+## 🔵 PHASE 7 — Testing & Stability 🛠️
 
 *Goal: Production-grade reliability.*
 
--    **Unit Tests:** Parser and Intent Detection.
--    **Integration Tests:** Full "User Input -> Action -> Response" flow.
--    **Command:** Run `pytest` and achieve 80%+ coverage.
+-    **Unit Tests:** Parser, intents, validator, permissions, intent resolution, Windows adapter, engine security, session context.
+-    **Integration Tests:** Full "User Input -> Action -> Response" flow (`tests/integration/`).
+-    **Command:** Run `pytest tests/` (suite passes in this repo). **Coverage:** target 80%+ once `pytest-cov` is part of the standard dev workflow.
+
+-   **Status:** **IN PROGRESS** (tests in place; coverage percentage not yet tracked in-repo.)
 
 ---
 

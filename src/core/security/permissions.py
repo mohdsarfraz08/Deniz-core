@@ -4,7 +4,12 @@ from typing import Any
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    """Repository root (contains ``config/permissions.json``), works with ``src/`` layout."""
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "config" / "permissions.json").is_file():
+            return parent
+    raise RuntimeError("Could not locate project root (config/permissions.json missing).")
 
 
 class PermissionChecker:

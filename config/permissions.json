@@ -6,6 +6,8 @@
   "get_memory_usage": true,
   "get_time": true,
   "unknown": false,
+  "not_implemented": true,
+  "dangerous_system": false,
   "confirm_yes": true,
   "confirm_no": true
 }

@@ -1,29 +1,39 @@
 from engine import AssistantEngine
 from adapters.windows_adapter import WindowsAdapter
 
+
 def test_full_engine_flow():
-    # Initialize engine (Phase 1/2)
+    """Integration path against real Windows adapter (timing-heavy metrics use psutil)."""
     engine = AssistantEngine(system_executor=WindowsAdapter())
 
-    # 1. Test Core Feature / Normal intent (Phase 2.2)
+    # Greeting (permissions allow greet)
     response = engine.handle("hello")
     assert "System operational" in response or "Hello" in response
 
-    # 2. Test Input Validation / Security (Phase 4.1)
-    # Trying to inject a shell command
+    # Validation rejects chained / shell metacharacters before OS calls
     response = engine.handle("open notepad; calc")
     assert "disallowed characters" in response.lower()
 
     response = engine.handle("greet && whoami")
     assert "disallowed characters" in response.lower()
 
-    # 3. Test Permission System (Phase 4.2)
-    # "unknown" intent is set to false in config/permissions.json
+    # Unrecognized text: clarification (not framed as security denial)
     response = engine.handle("do something weird")
-    # Actually wait, "do something weird" might map to "unknown" intent
-    # Let's see what the intent is for unknown text.
-    assert "Access denied" in response or "denied" in response.lower() or "disallowed" in response.lower() or True
+    assert "didn't understand" in response.lower() or "understand" in response.lower()
 
-    # Attempt to use a blocked intent directly if possible, but "unknown" intent should be triggered
     response = engine.handle("sdlkfjsldkfjsldkj")
+    assert "didn't understand" in response.lower() or "understand" in response.lower()
+
+    # Destructive system intent: permission policy (security)
+    response = engine.handle("shutdown system")
     assert "denied" in response.lower()
+
+    # Edge: empty / whitespace-only rejected by validator (no adapter invocation)
+    assert engine.handle("") == "Input cannot be empty."
+    assert engine.handle(" \t ") == "Input cannot be empty."
+
+    # Session follow-up (Phase 5): CPU then bare bridge → memory
+    r_cpu = engine.handle("check cpu")
+    assert "CPU" in r_cpu or "cpu" in r_cpu.lower()
+    r_mem = engine.handle("also")
+    assert "Memory" in r_mem or "memory" in r_mem.lower()

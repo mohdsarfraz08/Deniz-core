@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from engine import AssistantEngine
+from engine import AssistantEngine, MSG_UNKNOWN_COMMAND, MSG_NOT_IMPLEMENTED
 from core.security.permissions import PermissionChecker
 
 
@@ -55,10 +55,10 @@ def test_engine_rejects_invalid_input_before_permissions(tmp_path: Path) -> None
     assert "disallowed" in ok_msg.lower()
 
 
-def test_engine_unknown_intent_denied_by_default_config(
+def test_engine_unknown_intent_is_not_security_denial(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
-    """Shipped config sets unknown:false — user should get denial without adapter work."""
+    """Unknown input is a parser miss — friendly message, no permission warning."""
     p = tmp_path / "perm.json"
     p.write_text(json.dumps({"greet": True, "unknown": False}), encoding="utf-8")
     engine = AssistantEngine(
@@ -68,5 +68,33 @@ def test_engine_unknown_intent_denied_by_default_config(
 
     with caplog.at_level("WARNING"):
         out = engine.handle("xyzzy nonsense phrase")
+    assert out == MSG_UNKNOWN_COMMAND
+    assert "Access Denied" not in caplog.text
+
+
+def test_engine_dangerous_system_is_permission_denial(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    p = tmp_path / "perm.json"
+    p.write_text(
+        json.dumps({"dangerous_system": False, "greet": True}), encoding="utf-8"
+    )
+    engine = AssistantEngine(
+        system_executor=FakeExecutor(),
+        permission_checker=PermissionChecker(config_path=p),
+    )
+
+    with caplog.at_level("WARNING"):
+        out = engine.handle("shutdown system")
     assert out == "Access denied for this action."
     assert "Access Denied" in caplog.text
+
+
+def test_engine_not_implemented_returns_capability_message(tmp_path: Path) -> None:
+    p = tmp_path / "perm.json"
+    p.write_text(json.dumps({"greet": True}), encoding="utf-8")
+    engine = AssistantEngine(
+        system_executor=FakeExecutor(),
+        permission_checker=PermissionChecker(config_path=p),
+    )
+    assert engine.handle("remind me at noon") == MSG_NOT_IMPLEMENTED

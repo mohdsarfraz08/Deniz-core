@@ -123,3 +123,28 @@ def test_close_explorer_single_window_message():
 def test_intent_engine_confirm_without_pending():
     engine = IntentEngine(system_executor=FakeExecutor())
     assert engine.execute(Intent(intent="confirm_yes")) == "Nothing to confirm."
+
+
+def test_intent_engine_unknown_intent_message():
+    engine = IntentEngine(system_executor=FakeExecutor())
+    assert engine.execute(Intent(intent="unknown")) == "Unknown intent"
+
+
+def test_intent_engine_open_and_close_without_target():
+    engine = IntentEngine(system_executor=FakeExecutor())
+    assert engine.execute(Intent(intent="open_app", target=None)) == "No application specified."
+    assert engine.execute(Intent(intent="open_app", target="")) == "No application specified."
+    assert engine.execute(Intent(intent="close_app", target=None)) == "No application specified."
+    assert engine.execute(Intent(intent="close_app", target="")) == "No application specified."
+
+
+def test_intent_engine_confirmation_with_pending_action():
+    engine = IntentEngine(system_executor=FakeExecutor())
+    engine.pending_action = lambda: "Proceed accepted."
+
+    assert engine.execute(Intent(intent="confirm_yes")) == "Proceed accepted."
+    assert engine.pending_action is None
+
+    engine.pending_action = lambda: "unused"
+    assert engine.execute(Intent(intent="confirm_no")) == "Action cancelled."
+    assert engine.pending_action is None
