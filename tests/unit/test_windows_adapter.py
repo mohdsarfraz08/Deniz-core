@@ -1,6 +1,10 @@
 from unittest.mock import patch
 
+import pytest
+
 from adapters.windows_adapter import WindowsAdapter
+
+pytestmark = pytest.mark.windows_only
 
 
 def test_close_app_explorer_exe_returns_window_level_hint():

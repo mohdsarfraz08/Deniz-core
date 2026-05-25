@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 
 import pytest
 
@@ -21,6 +22,16 @@ __all__ = [
     "TrackingMiniExecutor",
     "write_permissions",
 ]
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip windows_only tests on Linux/macOS CI and local non-Windows runs."""
+    if sys.platform == "win32":
+        return
+    skip = pytest.mark.skip(reason="Windows-only test")
+    for item in items:
+        if "windows_only" in item.keywords:
+            item.add_marker(skip)
 
 
 @pytest.fixture

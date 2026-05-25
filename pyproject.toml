@@ -34,6 +34,9 @@ py-modules = ["engine"]
 testpaths = ["tests"]
 # Resolve imports when tests run before an editable install (CI bootstrap).
 pythonpath = ["src", "tests"]
+markers = [
+    "windows_only: requires Windows APIs (pywin32, os.startfile, subprocess paths)",
+]
 
 [tool.coverage.run]
 source = ["src"]

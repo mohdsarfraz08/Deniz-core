@@ -2,6 +2,8 @@
 
 from unittest.mock import ANY, MagicMock, patch
 
+import pytest
+
 from adapters.terminal_windows import (
     TerminalLaunchResult,
     close_focused_terminal_session,
@@ -10,6 +12,8 @@ from adapters.terminal_windows import (
 )
 from adapters.windows_adapter import WindowsAdapter
 from core.session.app_registry import SessionRegistry
+
+pytestmark = pytest.mark.windows_only
 
 
 def test_normalize_terminal_open_target_powershell_family():

@@ -3,6 +3,8 @@
 import builtins
 from unittest.mock import MagicMock, PropertyMock, patch
 
+import pytest
+
 from core.executor.window_executor import (
     _is_file_explorer_folder_window,
     close_file_explorer_windows_impl,
@@ -15,6 +17,7 @@ def _fake_import(name, globals=None, locals=None, fromlist=(), level=0):
     return builtins.__import__(name, globals, locals, fromlist, level)
 
 
+@pytest.mark.windows_only
 def test_close_file_explorer_import_error():
     with patch("builtins.__import__", side_effect=_fake_import):
         result = close_file_explorer_windows_impl()
@@ -22,6 +25,7 @@ def test_close_file_explorer_import_error():
     assert "win32com" in (result.get("detail") or "").lower()
 
 
+@pytest.mark.windows_only
 @patch("win32com.client.Dispatch", side_effect=RuntimeError("COM unavailable"))
 def test_close_file_explorer_com_dispatch_failure(_mock_dispatch):
     result = close_file_explorer_windows_impl()
@@ -29,6 +33,7 @@ def test_close_file_explorer_com_dispatch_failure(_mock_dispatch):
     assert "Shell" in (result.get("detail") or "")
 
 
+@pytest.mark.windows_only
 @patch("win32com.client.Dispatch")
 def test_close_file_explorer_closes_folder_windows(mock_dispatch):
     window_ok = MagicMock()
@@ -55,6 +60,7 @@ def test_close_file_explorer_closes_folder_windows(mock_dispatch):
     window_ok.Quit.assert_called_once()
 
 
+@pytest.mark.windows_only
 @patch("win32com.client.Dispatch")
 def test_close_file_explorer_item_access_error_skipped(mock_dispatch):
     windows = MagicMock()
@@ -70,6 +76,7 @@ def test_close_file_explorer_item_access_error_skipped(mock_dispatch):
     assert result["count"] == 0
 
 
+@pytest.mark.windows_only
 @patch("win32com.client.Dispatch")
 def test_close_file_explorer_count_parse_failure(mock_dispatch):
     windows = MagicMock()
@@ -84,6 +91,7 @@ def test_close_file_explorer_count_parse_failure(mock_dispatch):
     assert result["count"] == 0
 
 
+@pytest.mark.windows_only
 @patch("win32com.client.Dispatch")
 def test_close_file_explorer_quit_failure_continues(mock_dispatch):
     window_ok = MagicMock()

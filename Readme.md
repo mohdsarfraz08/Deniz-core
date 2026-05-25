@@ -45,4 +45,4 @@ pytest tests/ --cov=src --cov-report=term-missing
 pytest tests/ --cov=src --cov-fail-under=80
 ```
 
-CI runs on **Windows** and **Ubuntu** (see `.github/workflows/ci.yml`). Windows jobs enforce **80%** coverage. See [CONTRIBUTING.md](CONTRIBUTING.md) for layout and test helpers.
+CI runs on **Windows** and **Ubuntu** (see `.github/workflows/ci.yml`). Windows enforces **80%** coverage; Ubuntu runs portable tests (`windows_only` tests are skipped). See [CONTRIBUTING.md](CONTRIBUTING.md) for layout and test helpers.
