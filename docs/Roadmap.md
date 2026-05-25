@@ -2,7 +2,7 @@
 
 **Guiding Principle:** We build in 7 Phases. Each phase produces a runnable artifact. No feature is started until the previous version is reviewed and stabilized.
 
-**Implementation snapshot (kept in sync with the repo):** Phases 1–5 are done. Phase 6 is not started. Phase 7 has a growing `pytest` suite; the 80% coverage target is still a goal (run with `pytest-cov` when added to the environment).
+**Implementation snapshot (kept in sync with the repo):** Phases 1–5 and **Phase 7** are done (~195 tests, 80% coverage gate on Windows CI). **Phase 6** (minimal Linux adapter + OS auto-detect + Ubuntu CI) is in progress or complete per latest commit.
 
 ---
 
@@ -83,14 +83,17 @@
 
 ---
 
-## 🔵 PHASE 6 — Adapter Expansion (Cross-Platform)
+## 🔵 PHASE 6 — Adapter Expansion (Cross-Platform) ✅ (minimal)
 
 *Goal: Hardware independence.*
 
--    **Linux Adapter:** Implement `linux_adapter.py` following the `BaseAdapter` interface.
--    **Auto-Detection:** Engine detects OS at runtime and loads the correct adapter.
+-    **Linux Adapter:** `linux_adapter.py` — core intents (greet path via engine, open/close apps, metrics, file-manager process close).
+-    **Auto-Detection:** `adapters/factory.py` + `AssistantEngine` load Windows or Linux adapter by `sys.platform`.
+-    **CI:** `ubuntu-latest` job alongside Windows (coverage gate on Windows only).
 
--   **Status:** **NOT STARTED** (Windows adapter only today.)
+**Linux v1 limits:** No terminal disambiguation, risky-close prompts, or Shell COM window-level Explorer close.
+
+-   **Status:** **COMPLETED (minimal)** — full terminal/session-trust stack remains Windows-only.
 
 ---
 
@@ -100,9 +103,9 @@
 
 -    **Unit Tests:** Parser, intents, validator, permissions, intent resolution, Windows adapter, engine security, session context.
 -    **Integration Tests:** Full "User Input -> Action -> Response" flow (`tests/integration/`).
--    **Command:** Run `pytest tests/` (suite passes in this repo). **Coverage:** target 80%+ once `pytest-cov` is part of the standard dev workflow.
+-    **Command:** Run `pytest tests/` locally or in CI. **Coverage:** `pytest tests/ --cov=src --cov-report=term-missing` (see `CONTRIBUTING.md`); target 80%+ with a future `--cov-fail-under` gate.
 
--   **Status:** **IN PROGRESS** (tests in place; coverage percentage not yet tracked in-repo.)
+-   **Status:** **COMPLETED** (195+ tests, `--cov-fail-under=80` on Windows CI, shared fixtures in `tests/conftest.py`.)
 
 ---
 

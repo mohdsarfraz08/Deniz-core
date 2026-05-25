@@ -37,3 +37,13 @@ def test_permission_checker_ignores_non_bool_values(tmp_path: Path) -> None:
     checker = PermissionChecker(config_path=p)
     assert checker.is_allowed("greet") is True
     assert checker.is_allowed("open_app") is False
+
+
+def test_project_root_missing_raises_runtime_error(monkeypatch, tmp_path: Path) -> None:
+    from core.security import permissions as perm_mod
+
+    isolated = tmp_path / "nested" / "permissions.py"
+    isolated.parent.mkdir(parents=True)
+    monkeypatch.setattr(perm_mod, "__file__", str(isolated))
+    with pytest.raises(RuntimeError, match="Could not locate project root"):
+        perm_mod._project_root()

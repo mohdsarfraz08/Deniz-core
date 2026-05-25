@@ -21,6 +21,14 @@ _REOPEN = re.compile(
     r"^(open|launch|start) (it|that)( again)?$",
     re.IGNORECASE,
 )
+_REOPEN_BARE = re.compile(
+    r"^(open|launch|start) again$",
+    re.IGNORECASE,
+)
+# Parser splits these from reopen phrases when session should supply last_target.
+_REOPEN_LITERAL_TARGETS = frozenset(
+    {"again", "it again", "that again", "this again"},
+)
 
 
 def _norm(text: str) -> str:
@@ -69,6 +77,20 @@ class SessionManager:
         """
         text = _norm(raw_text)
 
+        # Reopen last app (parser may emit target "again", "it again", etc.)
+        if self._is_reopen_phrase(text) and self.last_target and self.last_intent in (
+            "open_app",
+            "close_app",
+        ):
+            return Intent(intent="open_app", target=self.last_target)
+
+        if parsed.intent == "open_app" and parsed.target:
+            tgt = parsed.target.strip().lower()
+            if (
+                tgt in _PRONOUN_TARGETS or tgt in _REOPEN_LITERAL_TARGETS
+            ) and self.last_target and self.last_intent in ("open_app", "close_app"):
+                return Intent(intent="open_app", target=self.last_target)
+
         if parsed.intent == "close_app" and parsed.target:
             tgt = parsed.target.strip().lower()
             if tgt in _PRONOUN_TARGETS and self.last_intent == "open_app" and self.last_target:
@@ -80,6 +102,11 @@ class SessionManager:
                 return resolved
 
         return parsed
+
+    @staticmethod
+    def _is_reopen_phrase(text: str) -> bool:
+        t = text.strip()
+        return bool(_REOPEN.match(t) or _REOPEN_BARE.match(t))
 
     def _resolve_unknown(self, text: str) -> Intent | None:
         last = self.last_intent
@@ -109,12 +136,12 @@ class SessionManager:
                 return Intent(intent="get_cpu_usage")
 
         if last == "open_app" and self.last_target:
-            if _REOPEN.match(text.strip()):
+            if self._is_reopen_phrase(text):
                 return Intent(intent="open_app", target=self.last_target)
             if _close_pronoun_phrase(text):
                 return Intent(intent="close_app", target=self.last_target)
 
-        if last == "close_app" and self.last_target and _REOPEN.match(text.strip()):
+        if last == "close_app" and self.last_target and self._is_reopen_phrase(text):
             return Intent(intent="open_app", target=self.last_target)
 
         return None
@@ -155,8 +182,33 @@ class SessionManager:
         if executed.intent in _METRICS | {"greet"}:
             return True
         if executed.intent == "open_app" and executed.target:
-            return True
+            return SessionManager._is_successful_open_response(response)
         if executed.intent == "close_app" and executed.target:
-            return True
+            return SessionManager._is_successful_close_response(response)
 
+        return False
+
+    @staticmethod
+    def _is_successful_open_response(response: str) -> bool:
+        """Do not record failed opens (e.g. target 'again') into session memory."""
+        lower = response.lower()
+        if lower.startswith("error opening"):
+            return False
+        if " opened." in lower or lower.endswith(" opened"):
+            return True
+        if lower.startswith("ignored duplicate terminal launch"):
+            return True
+        return False
+
+    @staticmethod
+    def _is_successful_close_response(response: str) -> bool:
+        lower = response.lower()
+        if lower.startswith("error") or lower.startswith("blocked:"):
+            return False
+        if "can't close" in lower or "cannot" in lower[:30]:
+            return False
+        if "closed" in lower or "no file explorer" in lower:
+            return True
+        if lower.startswith("cancelled"):
+            return False
         return False

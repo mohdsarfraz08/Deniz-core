@@ -10,12 +10,15 @@ readme = "Readme.md"
 requires-python = ">=3.10"
 dependencies = [
     "psutil==7.2.2",
-    "pywin32>=306",
 ]
 
 [project.optional-dependencies]
+windows = [
+    "pywin32>=306",
+]
 dev = [
     "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
 ]
 
 [tool.setuptools.package-dir]
@@ -30,4 +33,15 @@ py-modules = ["engine"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # Resolve imports when tests run before an editable install (CI bootstrap).
-pythonpath = ["src"]
+pythonpath = ["src", "tests"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = []
+
+[tool.coverage.report]
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]

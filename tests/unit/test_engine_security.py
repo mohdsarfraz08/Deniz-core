@@ -1,71 +1,37 @@
-import json
-from pathlib import Path
-
 import pytest
 
 from engine import AssistantEngine, MSG_UNKNOWN_COMMAND, MSG_NOT_IMPLEMENTED
-from core.security.permissions import PermissionChecker
-
-
-class FakeExecutor:
-    def open_app(self, app_name: str) -> str:
-        return f"{app_name} opened."
-
-    def close_app(self, app_name: str) -> str:
-        return f"{app_name} closed."
-
-    def close_file_explorer_windows(self):
-        return {
-            "status": "success",
-            "action": "close_file_explorer_windows",
-            "count": 0,
-        }
-
-    def get_time(self) -> str:
-        return "Current time is 10:00:00."
-
-    def get_cpu_usage(self) -> str:
-        return "Current CPU usage: 10%"
-
-    def get_memory_usage(self) -> str:
-        return "Current Memory usage: 40%"
-
-
-def test_engine_denies_when_intent_not_permitted(tmp_path: Path) -> None:
-    p = tmp_path / "perm.json"
-    p.write_text(json.dumps({"greet": False, "open_app": True}), encoding="utf-8")
-    engine = AssistantEngine(
-        system_executor=FakeExecutor(),
-        permission_checker=PermissionChecker(config_path=p),
+def test_engine_denies_when_intent_not_permitted(
+    mini_executor,
+    assistant_engine_factory,
+) -> None:
+    engine = assistant_engine_factory(
+        {"greet": False, "open_app": True},
+        executor=mini_executor,
     )
-
     assert engine.handle("hello") == "Access denied for this action."
     assert engine.handle("open calc") == "calc opened."
 
 
-def test_engine_rejects_invalid_input_before_permissions(tmp_path: Path) -> None:
-    p = tmp_path / "perm.json"
-    p.write_text(json.dumps({"greet": True}), encoding="utf-8")
-    engine = AssistantEngine(
-        system_executor=FakeExecutor(),
-        permission_checker=PermissionChecker(config_path=p),
-    )
-
+def test_engine_rejects_invalid_input_before_permissions(
+    assistant_engine_factory,
+    mini_executor,
+) -> None:
+    engine = assistant_engine_factory({"greet": True}, executor=mini_executor)
     ok_msg = engine.handle("bad;echo")
     assert "disallowed" in ok_msg.lower()
 
 
 def test_engine_unknown_intent_is_not_security_denial(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
+    assistant_engine_factory,
+    mini_executor,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Unknown input is a parser miss — friendly message, no permission warning."""
-    p = tmp_path / "perm.json"
-    p.write_text(json.dumps({"greet": True, "unknown": False}), encoding="utf-8")
-    engine = AssistantEngine(
-        system_executor=FakeExecutor(),
-        permission_checker=PermissionChecker(config_path=p),
+    engine = assistant_engine_factory(
+        {"greet": True, "unknown": False},
+        executor=mini_executor,
     )
-
     with caplog.at_level("WARNING"):
         out = engine.handle("xyzzy nonsense phrase")
     assert out == MSG_UNKNOWN_COMMAND
@@ -73,28 +39,23 @@ def test_engine_unknown_intent_is_not_security_denial(
 
 
 def test_engine_dangerous_system_is_permission_denial(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
+    assistant_engine_factory,
+    mini_executor,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
-    p = tmp_path / "perm.json"
-    p.write_text(
-        json.dumps({"dangerous_system": False, "greet": True}), encoding="utf-8"
+    engine = assistant_engine_factory(
+        {"dangerous_system": False, "greet": True},
+        executor=mini_executor,
     )
-    engine = AssistantEngine(
-        system_executor=FakeExecutor(),
-        permission_checker=PermissionChecker(config_path=p),
-    )
-
     with caplog.at_level("WARNING"):
         out = engine.handle("shutdown system")
     assert out == "Access denied for this action."
     assert "Access Denied" in caplog.text
 
 
-def test_engine_not_implemented_returns_capability_message(tmp_path: Path) -> None:
-    p = tmp_path / "perm.json"
-    p.write_text(json.dumps({"greet": True}), encoding="utf-8")
-    engine = AssistantEngine(
-        system_executor=FakeExecutor(),
-        permission_checker=PermissionChecker(config_path=p),
-    )
+def test_engine_not_implemented_returns_capability_message(
+    assistant_engine_factory,
+    mini_executor,
+) -> None:
+    engine = assistant_engine_factory({"greet": True}, executor=mini_executor)
     assert engine.handle("remind me at noon") == MSG_NOT_IMPLEMENTED

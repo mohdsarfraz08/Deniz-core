@@ -64,3 +64,32 @@ def test_parse_shutdown_system_is_dangerous_system() -> None:
 
 def test_parse_remind_me_prefix_is_not_implemented() -> None:
     assert CommandParser().parse("remind me at noon").intent == "not_implemented"
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "set timer",
+        "set alarm",
+        "translate hello to french",
+        "send email to bob",
+        "schedule meeting tomorrow",
+    ],
+)
+def test_parse_not_implemented_exact_and_prefixes(phrase: str) -> None:
+    assert CommandParser().parse(phrase).intent == "not_implemented"
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "poweroff now",
+        "halt machine",
+        "reboot the system",
+        "restart computer",
+        "format c: drive",
+        "wipe the disk clean",
+    ],
+)
+def test_parse_dangerous_system_variants(phrase: str) -> None:
+    assert CommandParser().parse(phrase).intent == "dangerous_system"

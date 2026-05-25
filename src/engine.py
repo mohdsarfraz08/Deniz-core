@@ -6,7 +6,7 @@ from core.security import PermissionChecker, validate_input
 from core.session_context import SessionManager
 from core.session.app_registry import SessionRegistry
 from core.system_executor import SystemExecutor
-from adapters.windows_adapter import WindowsAdapter
+from adapters.factory import create_system_executor
 from utils.logger import setup_logger
 
 logger = setup_logger("AssistantEngine")
@@ -31,7 +31,7 @@ class AssistantEngine:
             self.executor = (
                 system_executor
                 if system_executor is not None
-                else WindowsAdapter(session_registry=self.session_registry)
+                else create_system_executor(self.session_registry)
             )
 
             self.intent_engine = IntentEngine(system_executor=self.executor)

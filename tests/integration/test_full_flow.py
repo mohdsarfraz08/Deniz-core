@@ -1,7 +1,12 @@
+import sys
+
+import pytest
+
 from engine import AssistantEngine
 from adapters.windows_adapter import WindowsAdapter
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows adapter integration")
 def test_full_engine_flow():
     """Integration path against real Windows adapter (timing-heavy metrics use psutil)."""
     engine = AssistantEngine(system_executor=WindowsAdapter())

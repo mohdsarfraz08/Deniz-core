@@ -7,6 +7,7 @@ from core.parser import CommandParser, Intent
 from core.session_context import SessionManager
 from engine import AssistantEngine
 from core.security.permissions import PermissionChecker
+from helpers import write_permissions
 
 
 def test_enrich_cpu_then_bare_bridge_to_memory() -> None:
@@ -103,6 +104,30 @@ def test_resolve_unknown_reopen_after_close_via_session() -> None:
     assert out == Intent(intent="open_app", target="calc")
 
 
+def test_record_skips_failed_open_so_reopen_stays_valid() -> None:
+    """Failed \"open again\" must not set last_target to \"again\"."""
+    s = SessionManager()
+    s.record_successful_turn(Intent(intent="close_app", target="notepad"), "notepad.exe closed successfully.")
+    s.record_successful_turn(
+        Intent(intent="open_app", target="again"),
+        "Error opening again: [WinError 2] not found",
+    )
+    assert s.last_target == "notepad"
+    p = CommandParser()
+    it = s.enrich("open it again", p.parse("open it again"))
+    assert it.target == "notepad"
+
+
+def test_enrich_open_again_after_close() -> None:
+    s = SessionManager()
+    s.last_intent = "close_app"
+    s.last_target = "notepad"
+    p = CommandParser()
+    it = s.enrich("open again", p.parse("open again"))
+    assert it.intent == "open_app"
+    assert it.target == "notepad"
+
+
 def test_record_rejects_access_denied_response_string() -> None:
     s = SessionManager()
     s.last_intent = "get_cpu_usage"
@@ -141,6 +166,27 @@ def test_enrich_reopen_after_close() -> None:
     s.last_intent = "close_app"
     s.last_target = "notepad"
     it = s.enrich("open it again", Intent(intent="unknown"))
+    assert it.intent == "open_app"
+    assert it.target == "notepad"
+
+
+def test_enrich_reopen_when_parser_emits_open_it_again_target() -> None:
+    """Regression: parser maps \"open it again\" to target \"it again\", not unknown."""
+    s = SessionManager()
+    s.last_intent = "close_app"
+    s.last_target = "notepad"
+    p = CommandParser()
+    it = s.enrich("open it again", p.parse("open it again"))
+    assert it.intent == "open_app"
+    assert it.target == "notepad"
+
+
+def test_enrich_open_pronoun_after_close() -> None:
+    s = SessionManager()
+    s.last_intent = "close_app"
+    s.last_target = "notepad"
+    p = CommandParser()
+    it = s.enrich("open it", p.parse("open it"))
     assert it.intent == "open_app"
     assert it.target == "notepad"
 
@@ -184,119 +230,73 @@ def test_clear_session() -> None:
     assert s.last_target is None
 
 
-def test_engine_follow_up_cpu_to_memory(tmp_path: Path) -> None:
-    p = tmp_path / "perm.json"
-    p.write_text(
-        json.dumps(
-            {
-                "get_cpu_usage": True,
-                "get_memory_usage": True,
-                "unknown": False,
-            }
-        ),
-        encoding="utf-8",
+def test_engine_follow_up_cpu_to_memory(
+    assistant_engine_factory,
+    session_test_executor,
+) -> None:
+    engine = assistant_engine_factory(
+        {"get_cpu_usage": True, "get_memory_usage": True, "unknown": False},
+        executor=session_test_executor,
     )
-
-    class Ex:
-        def open_app(self, app_name: str) -> str:
-            return f"{app_name} opened."
-
-        def close_app(self, app_name: str) -> str:
-            return f"{app_name} closed."
-
-        def close_file_explorer_windows(self):
-            return {"status": "success", "action": "close_file_explorer_windows", "count": 0}
-
-        def get_time(self) -> str:
-            return "t"
-
-        def get_cpu_usage(self) -> str:
-            return "cpu-ok"
-
-        def get_memory_usage(self) -> str:
-            return "mem-ok"
-
-    engine = AssistantEngine(
-        system_executor=Ex(),
-        permission_checker=PermissionChecker(config_path=p),
-    )
-
     assert engine.handle("check cpu") == "cpu-ok"
     assert engine.handle("also") == "mem-ok"
 
 
-def test_engine_access_denied_does_not_advance_session(tmp_path: Path) -> None:
-    p = tmp_path / "perm.json"
-    p.write_text(json.dumps({"get_cpu_usage": True, "get_memory_usage": False}), encoding="utf-8")
-
-    class Ex:
-        def open_app(self, app_name: str) -> str:
-            return f"{app_name} opened."
-
-        def close_app(self, app_name: str) -> str:
-            return f"{app_name} closed."
-
-        def close_file_explorer_windows(self):
-            return {"status": "success", "action": "x", "count": 0}
-
-        def get_time(self) -> str:
-            return "t"
-
-        def get_cpu_usage(self) -> str:
-            return "cpu-ok"
-
-        def get_memory_usage(self) -> str:
-            return "mem-ok"
-
-    engine = AssistantEngine(
-        system_executor=Ex(),
-        permission_checker=PermissionChecker(config_path=p),
+def test_engine_access_denied_does_not_advance_session(
+    tmp_path: Path,
+    assistant_engine_factory,
+    session_test_executor,
+) -> None:
+    engine = assistant_engine_factory(
+        {"get_cpu_usage": True, "get_memory_usage": False},
+        executor=session_test_executor,
     )
     engine.handle("check cpu")
     out = engine.handle("also")
     assert out == "Access denied for this action."
-    # Session should still be CPU so a permitted follow-up still works
-    p2 = tmp_path / "perm2.json"
-    p2.write_text(json.dumps({"get_cpu_usage": True, "get_memory_usage": True}), encoding="utf-8")
+    p2 = write_permissions(
+        tmp_path,
+        {"get_cpu_usage": True, "get_memory_usage": True},
+        filename="perm2.json",
+    )
     engine.permissions = PermissionChecker(config_path=p2)
     assert engine.handle("also") == "mem-ok"
 
 
-def test_engine_close_it_after_open(tmp_path: Path) -> None:
-    p = tmp_path / "perm.json"
-    p.write_text(
-        json.dumps({"open_app": True, "close_app": True, "unknown": False}),
-        encoding="utf-8",
-    )
-
-    class Ex:
-        def __init__(self) -> None:
-            self.closed: list[str] = []
-
-        def open_app(self, app_name: str) -> str:
-            return f"{app_name} opened."
-
-        def close_app(self, app_name: str) -> str:
-            self.closed.append(app_name)
-            return f"{app_name} closed."
-
-        def close_file_explorer_windows(self):
-            return {"status": "success", "action": "x", "count": 0}
-
-        def get_time(self) -> str:
-            return "t"
-
-        def get_cpu_usage(self) -> str:
-            return "c"
-
-        def get_memory_usage(self) -> str:
-            return "m"
-
-    ex = Ex()
-    engine = AssistantEngine(
-        system_executor=ex,
-        permission_checker=PermissionChecker(config_path=p),
+def test_engine_close_it_after_open(
+    assistant_engine_factory,
+    tracking_mini_executor,
+) -> None:
+    engine = assistant_engine_factory(
+        {"open_app": True, "close_app": True, "unknown": False},
+        executor=tracking_mini_executor,
     )
     assert engine.handle("open notepad") == "notepad opened."
     assert engine.handle("close it") == "notepad closed."
-    assert ex.closed == ["notepad"]
+    assert tracking_mini_executor.closed == ["notepad"]
+
+
+def test_engine_reopen_it_again_after_close(
+    assistant_engine_factory,
+    tracking_mini_executor,
+) -> None:
+    engine = assistant_engine_factory(
+        {"open_app": True, "close_app": True, "unknown": False},
+        executor=tracking_mini_executor,
+    )
+    assert engine.handle("open notepad") == "notepad opened."
+    assert engine.handle("close notepad") == "notepad closed."
+    assert engine.handle("open it again") == "notepad opened."
+
+
+def test_engine_open_again_after_close(
+    assistant_engine_factory,
+    tracking_mini_executor,
+) -> None:
+    engine = assistant_engine_factory(
+        {"open_app": True, "close_app": True, "unknown": False},
+        executor=tracking_mini_executor,
+    )
+    assert engine.handle("open notepad") == "notepad opened."
+    assert engine.handle("close notepad") == "notepad closed."
+    assert engine.handle("open again") == "notepad opened."
