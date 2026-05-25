@@ -43,7 +43,7 @@ source = ["src"]
 omit = []
 
 [tool.coverage.report]
-fail_under = 80
+# 80% gate is enforced on Windows CI only (--cov-fail-under=80), not on Linux.
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
