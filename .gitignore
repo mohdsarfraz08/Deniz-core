@@ -28,3 +28,4 @@ dist/
 .coverage.*
 CONTRIBUTING.md
 docs/docs.doc
+docs/AImap.md
