@@ -6,6 +6,8 @@ from core.security import PermissionChecker, validate_input
 from core.session_context import SessionManager
 from core.session.app_registry import SessionRegistry
 from core.system_executor import SystemExecutor
+from core.action_results import ActionResult
+from core.audit_log import build_audit_record, write_audit_record
 from adapters.factory import create_system_executor
 from utils.logger import setup_logger
 
@@ -104,6 +106,19 @@ class AssistantEngine:
                 f"Intent '{intent.intent}' executed in {stats['execution_time']:.4f}s "
                 f"with CPU usage delta: {stats['cpu_usage']}%"
             )
+
+            # --- Phase 8: Execution Audit ---
+            # Construct a lightweight ActionResult for audit purposes.
+            # Per Q1 decision, ActionResult stays at the SystemExecutor boundary
+            # for routing; here we use it solely for structured telemetry.
+            _success = not response.lower().startswith("error") if response else True
+            _audit_result = ActionResult(
+                success=_success,
+                message=response,
+                recoverable=_success,
+            )
+            _record = build_audit_record(intent, _audit_result, stats["execution_time"])
+            write_audit_record(_record)
 
             self.session.record_successful_turn(intent, response)
 

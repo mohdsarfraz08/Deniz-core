@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from core.action_results import CloseFileExplorerWindowsResult
+from core.action_results import ActionResult
 
 
 class SystemExecutor(Protocol):
@@ -12,7 +12,7 @@ class SystemExecutor(Protocol):
     def close_app(self, app_name: str) -> str:
         ...
 
-    def close_file_explorer_windows(self) -> CloseFileExplorerWindowsResult:
+    def close_file_explorer_windows(self) -> ActionResult:
         ...
 
     def get_time(self) -> str:

@@ -86,8 +86,8 @@ def test_close_file_explorer_windows_counts_managers(mock_iter):
     other.info = {"pid": 2, "name": "bash"}
     mock_iter.return_value = [nautilus, other]
     result = LinuxAdapter().close_file_explorer_windows()
-    assert result["status"] == "success"
-    assert result["count"] == 1
+    assert result.success is True
+    assert result.data["count"] == 1
     nautilus.terminate.assert_called_once()
 
 

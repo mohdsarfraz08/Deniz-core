@@ -8,13 +8,14 @@ tracking are Windows-only in v1. This adapter does not expose pending resolvers.
 from __future__ import annotations
 
 import datetime
+import logging
 import shutil
 import subprocess
 
 import psutil
 
 from .base_adapter import BaseAdapter
-from core.action_results import CloseFileExplorerWindowsResult
+from core.action_results import ActionResult
 from core.security.process_kill_policy import is_global_mass_kill_blocked, normalize_exe_name
 from core.session.app_registry import SessionRegistry
 
@@ -28,6 +29,8 @@ CRITICAL_PROCESSES: frozenset[str] = frozenset(
         "sshd",
     }
 )
+
+logger = logging.getLogger("LinuxAdapter")
 
 # File-manager processes closed by ``close_file_explorer_windows`` (process-level, not per-window).
 FILE_MANAGER_PROCESSES: frozenset[str] = frozenset(
@@ -71,6 +74,10 @@ class LinuxAdapter(BaseAdapter):
                 )
                 return f"{name} opened."
             except OSError as e:
+                logger.error(
+                    "open_app OS failure: app=%r errno=%r detail=%r",
+                    name, e.errno, str(e),
+                )
                 return f"Error opening {name}: {e}"
 
         xdg = shutil.which("xdg-open")
@@ -84,6 +91,10 @@ class LinuxAdapter(BaseAdapter):
                 )
                 return f"{name} opened."
             except OSError as e:
+                logger.error(
+                    "open_app xdg-open failure: app=%r errno=%r detail=%r",
+                    name, e.errno, str(e),
+                )
                 return f"Error opening {name}: {e}"
 
         return f"Error opening {name}: application not found in PATH"
@@ -118,9 +129,10 @@ class LinuxAdapter(BaseAdapter):
             return f"{target} closed successfully."
         return f"{target} is not running."
 
-    def close_file_explorer_windows(self) -> CloseFileExplorerWindowsResult:
+    def close_file_explorer_windows(self) -> ActionResult:
         """
-        Terminate file-manager processes (Nautilus, Dolphin, etc.).
+        Terminate file-manager processes (Nautilus, Dolphin, etc.) and return
+        a structured ActionResult.
 
         Unlike Windows, this does not close individual folder windows via Shell COM.
         """
@@ -135,11 +147,11 @@ class LinuxAdapter(BaseAdapter):
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 continue
 
-        return {
-            "status": "success",
-            "action": "close_file_explorer_windows",
-            "count": closed,
-        }
+        return ActionResult(
+            success=True,
+            message="",  # formatted by format_close_file_explorer_message in IntentEngine
+            data={"count": closed},
+        )
 
     def get_time(self) -> str:
         return f"Current time is {datetime.datetime.now().strftime('%H:%M:%S')}."

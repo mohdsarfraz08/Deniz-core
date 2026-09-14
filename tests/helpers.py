@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from core.action_results import ActionResult
+
 
 class MiniExecutor:
     """Minimal fake system executor for engine pipeline and security tests."""
@@ -16,12 +18,8 @@ class MiniExecutor:
     def close_app(self, app_name: str) -> str:
         return f"{app_name} closed."
 
-    def close_file_explorer_windows(self) -> dict[str, Any]:
-        return {
-            "status": "success",
-            "action": "close_file_explorer_windows",
-            "count": 0,
-        }
+    def close_file_explorer_windows(self) -> ActionResult:
+        return ActionResult(success=True, message="", data={"count": 0})
 
     def get_time(self) -> str:
         return "t"
