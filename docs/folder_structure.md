@@ -6,104 +6,182 @@ Deniz/
 ├── main.py
 ├── pyproject.toml
 ├── requirements.txt
-├── Readme.md
+├── README.md
 ├── CONTRIBUTING.md
+├── LICENSE
 ├── .gitignore
 │
 ├── docs/
-│   ├── CHECKLIST.md
-│   ├── Roadmap.md
-│   ├── folder_structure.md
-│   └── manual_test.md
+│   ├── architecture/
+│   ├── roadmap/
+│   ├── api/
+│   ├── development/
+│   ├── deployment/
+│   └── images/
 │
 ├── config/
+│   ├── settings.json
 │   ├── permissions.json
-│   └── settings.json
+│   ├── models.json
+│   └── logging.json
+│
+├── assets/
+│   ├── icons/
+│   ├── sounds/
+│   └── images/
 │
 ├── logs/
 │
+├── data/
+│   ├── memory/
+│   ├── cache/
+│   ├── embeddings/
+│   └── database/
+│
 ├── src/
+│
 │   ├── engine.py
-│   ├── adapters/
+│   │
+│   ├── ai/
 │   │   ├── __init__.py
-│   │   ├── base_adapter.py
-│   │   ├── factory.py
-│   │   ├── linux_adapter.py
-│   │   ├── terminal_constants.py
-│   │   ├── terminal_windows.py
-│   │   └── windows_adapter.py
+│   │   │
+│   │   ├── planner/
+│   │   ├── reasoning/
+│   │   ├── memory/
+│   │   ├── models/
+│   │   ├── prompts/
+│   │   ├── embeddings/
+│   │   ├── tools/
+│   │   ├── vision/
+│   │   └── speech/
+│   │
+│   ├── automation/
+│   │   ├── __init__.py
+│   │   │
+│   │   ├── manager.py
+│   │   ├── session.py
+│   │   │
+│   │   ├── backends/
+│   │   │   ├── base_backend.py
+│   │   │   ├── windows_backend.py
+│   │   │   ├── linux_backend.py
+│   │   │   └── macos_backend.py
+│   │   │
+│   │   ├── controllers/
+│   │   │   ├── mouse_controller.py
+│   │   │   ├── keyboard_controller.py
+│   │   │   ├── window_controller.py
+│   │   │   ├── clipboard_controller.py
+│   │   │   ├── dialog_controller.py
+│   │   │   ├── form_controller.py
+│   │   │   ├── menu_controller.py
+│   │   │   ├── table_controller.py
+│   │   │   ├── tree_controller.py
+│   │   │   └── tab_controller.py
+│   │   │
+│   │   ├── search/
+│   │   │   ├── finder.py
+│   │   │   ├── selectors.py
+│   │   │   ├── cache.py
+│   │   │   └── filters.py
+│   │   │
+│   │   ├── readers/
+│   │   │   ├── ui_reader.py
+│   │   │   ├── window_reader.py
+│   │   │   └── element_reader.py
+│   │   │
+│   │   ├── applications/
+│   │   │   ├── chrome.py
+│   │   │   ├── edge.py
+│   │   │   ├── explorer.py
+│   │   │   ├── vscode.py
+│   │   │   ├── paint.py
+│   │   │   ├── terminal.py
+│   │   │   ├── word.py
+│   │   │   ├── excel.py
+│   │   │   └── powerpoint.py
+│   │   │
+│   │   ├── vision/
+│   │   │   ├── screenshot.py
+│   │   │   ├── ocr.py
+│   │   │   ├── template_matching.py
+│   │   │   └── regions.py
+│   │   │
+│   │   ├── models/
+│   │   └── utils/
 │   │
 │   ├── core/
 │   │   ├── __init__.py
-│   │   ├── action_registry.py
-│   │   ├── action_results.py
+│   │   │
+│   │   ├── parser.py
 │   │   ├── intent_engine.py
 │   │   ├── intent_resolution.py
-│   │   ├── parser.py
+│   │   ├── action_registry.py
+│   │   ├── action_results.py
 │   │   ├── session_context.py
-│   │   ├── system_executor.py
-│   │   ├── executor/
-│   │   │   ├── __init__.py
-│   │   │   └── window_executor.py
 │   │   │
-│   │   ├── monitoring/
-│   │   │   ├── __init__.py
-│   │   │   └── resource_monitor.py
+│   │   ├── execution/
+│   │   │   ├── system_executor.py
+│   │   │   ├── workflow_executor.py
+│   │   │   └── task_executor.py
 │   │   │
 │   │   ├── security/
-│   │   │   ├── __init__.py
-│   │   │   ├── permissions.py
-│   │   │   ├── process_kill_policy.py
-│   │   │   ├── scoped_terminate.py
-│   │   │   ├── terminal_session_analysis.py
-│   │   │   ├── terminal_trust.py
-│   │   │   └── validator.py
 │   │   │
-│   │   └── session/
-│   │       ├── __init__.py
-│   │       ├── app_registry.py
-│   │       ├── pending_terminal_disambiguation.py
-│   │       └── session_manager.py
+│   │   ├── monitoring/
+│   │   │
+│   │   ├── session/
+│   │   │
+│   │   └── workflow/
 │   │
-│   ├── utils/
-│   │   ├── __init__.py
-│   │   ├── file_loader.py
-│   │   └── logger.py
+│   ├── interfaces/
+│   │   ├── desktop/
+│   │   ├── web/
+│   │   ├── cli/
+│   │   └── voice/
 │   │
-│   └── assistant_v1.egg-info/
+│   ├── api/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   ├── schemas/
+│   │   └── server.py
+│   │
+│   ├── services/
+│   │   ├── assistant/
+│   │   ├── conversation/
+│   │   ├── notifications/
+│   │   ├── workspace/
+│   │   └── updater/
+│   │
+│   ├── infrastructure/
+│   │   ├── config/
+│   │   ├── logging/
+│   │   ├── database/
+│   │   ├── cache/
+│   │   ├── events/
+│   │   └── dependency_injection/
+│   │
+│   ├── plugins/
+│   │   ├── manager.py
+│   │   └── builtins/
+│   │
+│   ├── adapters/
+│   │   ├── base_adapter.py
+│   │   ├── windows_adapter.py
+│   │   ├── linux_adapter.py
+│   │   ├── macos_adapter.py
+│   │   └── factory.py
+│   │
+│   └── utils/
+│       ├── logger.py
+│       ├── file_loader.py
+│       ├── helpers.py
+│       └── constants.py
 │
 └── tests/
-    ├── conftest.py
-    ├── helpers.py
-    ├── manual_test.md
+    ├── unit/
     ├── integration/
-    │   ├── test_full_flow.py
-    │   └── test_linux_flow.py
-    │
-    └── unit/
-        ├── test_action_registry.py
-        ├── test_adapter_factory.py
-        ├── test_engine_pipeline.py
-        ├── test_engine_risk_confirmation.py
-        ├── test_engine_security.py
-        ├── test_intent.py
-        ├── test_intent_resolution.py
-        ├── test_linux_adapter.py
-        ├── test_parser.py
-        ├── test_parser_edges.py
-        ├── test_pending_terminal_disambiguation.py
-        ├── test_permissions.py
-        ├── test_process_kill_policy.py
-        ├── test_resource_monitor.py
-        ├── test_scoped_terminate.py
-        ├── test_session_context.py
-        ├── test_session_registry.py
-        ├── test_terminal_constants.py
-        ├── test_terminal_risk.py
-        ├── test_terminal_session_analysis.py
-        ├── test_terminal_trust.py
-        ├── test_terminal_windows.py
-        ├── test_validator.py
-        ├── test_window_executor.py
-        └── test_windows_adapter.py
+    ├── automation/
+    ├── ai/
+    ├── api/
+    └── fixtures/
 ```
