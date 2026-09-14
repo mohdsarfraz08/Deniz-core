@@ -78,6 +78,23 @@
 -    **Session Manager:** `core/session_context.py` (`SessionManager`) stores the last successful intent and last app target after each completed turn.
 -    **Contextual Logic:** Rule-based `enrich()` after parse — e.g. bare follow-ups (`also`, `and?`, `what else`) alternate system metrics after CPU/memory/time; pronoun `close it` / `close that` resolves to the last opened app; `launch it again` / `open it again` reopens the last app (including after a close).
 -    **Constraint:** Rule-based only; no background threads.
+-    **UX Hardening (post-stabilisation):** Added compound-command guard in `core/parser.py` (`_is_compound_command()`). Intercepts inputs where action-level keywords appear on both sides of a conjunction (`and`, `then`, `also`) and returns `Intent(intent="compound_command")`. Engine surfaces `"One command at a time, please."` — eliminating the raw `WinError 2` trace observed in manual testing. Covered by `tests/unit/test_compound_command_guard.py`.
+
+### ⚠️ Known Limitation — Single-Intent Pipeline (deferred to Phase 11–12)
+
+The v1 `CommandParser` is a deterministic, single-intent parser. It cannot split or sequence compound inputs such as:
+
+```
+check cpu and open chrome      → only first intent executes (v1 behaviour)
+open chrome then explorer      → treated as a single app target, causes WinError 2
+check cpu also show time       → only CPU executes
+```
+
+**Root cause:** The parser returns on the first matched keyword. Multi-command splitting requires a planning layer.
+
+**Deferred to:** Phase 11 (Hybrid Router) and Phase 12 (Planning Engine), where compound goals will be decomposed into ordered tool-call sequences by the AI planner.
+
+**Current mitigation:** The `_is_compound_command()` guard (Phase 5 UX hardening) intercepts the most common patterns and returns a graceful user message instead of a system error.
 
 -   **Status:** **COMPLETED** (session is separate from `logs/session.log`, which remains operational logging only.)
 

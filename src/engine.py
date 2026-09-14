@@ -14,6 +14,7 @@ logger = setup_logger("AssistantEngine")
 # User-facing: parser miss vs policy vs roadmap (not security-style denial).
 MSG_UNKNOWN_COMMAND = "I didn't understand that command."
 MSG_NOT_IMPLEMENTED = "That feature is not implemented yet."
+MSG_COMPOUND_COMMAND = "One command at a time, please."
 
 
 class AssistantEngine:
@@ -85,6 +86,10 @@ class AssistantEngine:
             if intent.intent == "not_implemented":
                 logger.info("Unsupported feature request; text=%r", text[:200])
                 return MSG_NOT_IMPLEMENTED
+
+            if intent.intent == "compound_command":
+                logger.info("Compound command rejected (v1 single-intent limit); text=%r", text[:200])
+                return MSG_COMPOUND_COMMAND
 
             if not self.permissions.is_allowed(intent.intent):
                 logger.warning("Access Denied: intent '%s'", intent.intent)

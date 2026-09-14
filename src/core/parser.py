@@ -19,6 +19,9 @@ class CommandParser:
     TIME_KEYWORDS = ["time", "clock"]
     GREET_KEYWORDS = ["hello", "hi"]
 
+    # Conjunctions that signal a compound command attempt.
+    COMPOUND_CONJUNCTIONS = (" and ", " then ", " also ")
+
     _NOT_IMPLEMENTED_EXACT = frozenset({"remind me", "set timer", "set alarm"})
     _NOT_IMPLEMENTED_PREFIXES = (
         "remind me ",
@@ -32,6 +35,10 @@ class CommandParser:
     def parse(self, text: str) -> Intent:
         text = text.strip().lower()
         text = re.sub(r"\s+", " ", text)
+
+        # --- Compound command guard (must be first, before any intent routing) ---
+        if self._is_compound_command(text):
+            return Intent(intent="compound_command")
 
         # --- Greet ---
         if text in self.GREET_KEYWORDS:
@@ -76,6 +83,43 @@ class CommandParser:
             return Intent(intent="dangerous_system")
 
         return Intent(intent="unknown")
+
+    @classmethod
+    def _is_compound_command(cls, text: str) -> bool:
+        """Return True when both sides of a conjunction contain a distinct command.
+
+        A segment is considered a command only when it contains:
+          - A verb keyword (open/close/quit/launch/start/exit), OR
+          - A multi-word metric phrase (e.g. 'check cpu', 'show time', 'check memory').
+
+        This avoids false positives on natural metric phrases like
+        ``check cpu and memory`` or ``check cpu and time`` where the right
+        side is a bare noun, not an independent command.
+        """
+        _VERB_KEYWORDS = cls.OPEN_KEYWORDS + cls.CLOSE_KEYWORDS
+        _METRIC_PHRASES = (
+            "check cpu", "check processor",
+            "check memory", "check ram",
+            "check time", "show time", "show clock",
+            "get cpu", "get memory", "get time",
+        )
+
+        def _is_command_segment(segment: str) -> bool:
+            # Has an action verb
+            if any(segment.startswith(v) or f" {v} " in segment or segment.endswith(v)
+                   for v in _VERB_KEYWORDS):
+                return True
+            # Has a recognisable multi-word metric phrase
+            if any(phrase in segment for phrase in _METRIC_PHRASES):
+                return True
+            return False
+
+        for conj in cls.COMPOUND_CONJUNCTIONS:
+            if conj in text:
+                left, _, right = text.partition(conj)
+                if _is_command_segment(left.strip()) and _is_command_segment(right.strip()):
+                    return True
+        return False
 
     @classmethod
     def _matches_not_implemented(cls, text: str) -> bool:
