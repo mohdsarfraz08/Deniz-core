@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from core.action_results import CloseFileExplorerWindowsResult
+from core.action_results import ActionResult
 
 
 class BaseAdapter(ABC):
@@ -21,7 +21,7 @@ class BaseAdapter(ABC):
         pass
 
     @abstractmethod
-    def close_file_explorer_windows(self) -> CloseFileExplorerWindowsResult:
+    def close_file_explorer_windows(self) -> ActionResult:
         pass
 
     @abstractmethod

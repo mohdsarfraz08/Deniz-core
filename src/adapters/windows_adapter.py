@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import os
 import time
 from dataclasses import dataclass
@@ -8,6 +9,7 @@ from dataclasses import dataclass
 import psutil
 
 from .base_adapter import BaseAdapter
+from core.action_results import ActionResult
 from .terminal_windows import (
     TERMINAL_LAUNCH_COOLDOWN_SEC,
     TerminalLaunchResult,
@@ -47,6 +49,8 @@ CRITICAL_PROCESSES = [
     "winlogon.exe",
     "csrss.exe",
 ]
+
+logger = logging.getLogger("WindowsAdapter")
 
 
 @dataclass
@@ -187,6 +191,10 @@ class WindowsAdapter(BaseAdapter):
             os.startfile(app_name)
             return f"{app_name} opened."
         except OSError as e:
+            logger.error(
+                "open_app OS failure: app=%r errno=%r detail=%r",
+                app_name, getattr(e, 'winerror', e.errno), str(e),
+            )
             return f"Error opening {app_name}: {e}"
 
     def _register_terminal_launch(self, canonical: str, result: TerminalLaunchResult) -> None:
@@ -216,8 +224,21 @@ class WindowsAdapter(BaseAdapter):
         self._last_terminal_launch_key = canonical
         return True
 
-    def close_file_explorer_windows(self):
-        return close_file_explorer_windows_impl()
+    def close_file_explorer_windows(self) -> ActionResult:
+        """Close all open File Explorer windows via COM and return a structured ActionResult."""
+        raw = close_file_explorer_windows_impl()
+        # raw is a CloseFileExplorerWindowsResult dict from the legacy impl
+        if raw.get("status") == "error":
+            return ActionResult(
+                success=False,
+                message=raw.get("detail") or "Could not close File Explorer windows.",
+                recoverable=True,
+            )
+        return ActionResult(
+            success=True,
+            message="",  # formatted by format_close_file_explorer_message in IntentEngine
+            data={"count": raw.get("count", 0)},
+        )
 
     def close_app(self, app_name: str):
         term_key = terminal_close_request_key(app_name)

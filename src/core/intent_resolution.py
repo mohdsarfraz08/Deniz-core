@@ -1,4 +1,6 @@
-from core.action_results import CloseFileExplorerWindowsResult
+from __future__ import annotations
+
+from core.action_results import ActionResult, CloseFileExplorerWindowsResult
 
 EXPLORER_ALIASES: frozenset[str] = frozenset(
     {
@@ -53,10 +55,30 @@ def terminal_close_request_key(raw: str) -> str | None:
     return aliases.get(slug)
 
 
-def format_close_file_explorer_message(result: CloseFileExplorerWindowsResult) -> str:
-    if result["status"] == "error":
-        return result.get("detail") or "Could not close File Explorer windows."
-    n = result["count"]
+def format_close_file_explorer_message(
+    result: ActionResult | CloseFileExplorerWindowsResult,
+) -> str:
+    """
+    Produce a user-facing string from a close-file-explorer result.
+
+    Accepts both the new ``ActionResult`` (Phase 8) and the legacy
+    ``CloseFileExplorerWindowsResult`` dict for backward compatibility.
+    """
+    # --- ActionResult path (Phase 8+) ---
+    if isinstance(result, ActionResult):
+        if not result.success:
+            return result.message or "Could not close File Explorer windows."
+        n = (result.data or {}).get("count", 0)
+        if n == 0:
+            return "No File Explorer windows were open."
+        if n == 1:
+            return "Closed 1 File Explorer window."
+        return f"Closed {n} File Explorer windows."
+
+    # --- Legacy dict path (deprecated, kept for transition) ---
+    if result.get("status") == "error":  # type: ignore[union-attr]
+        return result.get("detail") or "Could not close File Explorer windows."  # type: ignore[return-value]
+    n = result["count"]  # type: ignore[index]
     if n == 0:
         return "No File Explorer windows were open."
     if n == 1:
