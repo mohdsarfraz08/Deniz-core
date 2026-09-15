@@ -177,7 +177,10 @@ class PathGuard:
 
         # --- LAYER 2: Canonical Resolution & Sandbox Containment ---
 
-        candidate_path = Path(raw_str)
+        # Normalize backslashes to forward slashes for cross-platform containment
+        # (on POSIX, backslashes are not treated as directory separators by pathlib)
+        normalized_str = raw_str.replace("\\", "/")
+        candidate_path = Path(normalized_str)
         if candidate_path.is_absolute():
             if candidate_path.drive and self.workspace_root.drive:
                 if candidate_path.drive.upper() != self.workspace_root.drive.upper():
