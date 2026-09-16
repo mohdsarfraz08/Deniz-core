@@ -58,7 +58,10 @@ class CommandParser:
         for keyword in self.OPEN_KEYWORDS:
             if text.startswith(keyword + " "):
                 target = text.replace(keyword, "", 1).strip()
-                return Intent(intent="open_app", target=target)
+                # Disambiguate "open file" intent vs "open app" intent.
+                # "open file" / "show file" is handled below as read_file.
+                if not any(text.startswith(kw + " file") for kw in self.OPEN_KEYWORDS):
+                    return Intent(intent="open_app", target=target)
 
         # --- Close App ---
         for keyword in self.CLOSE_KEYWORDS:
@@ -78,9 +81,106 @@ class CommandParser:
         if any(word in text for word in self.TIME_KEYWORDS):
             return Intent(intent="get_time")
 
-        # --- Dangerous system commands (after open/close so \"open shutdown.exe\" stays open_app) ---
+        # --- Dangerous system commands (after open/close so "open shutdown.exe" stays open_app) ---
         if self._matches_dangerous_system_command(text):
             return Intent(intent="dangerous_system")
+
+        # -------------------------------------------------------------------------
+        # Phase 9 — File System Intent Routing
+        #
+        # Extraction strategy (Q1 decision — Option A: Positional):
+        #   The first token after the verb/keyword group is treated as the file or
+        #   folder path. All remaining tokens are treated as content (value field).
+        #   This approach is intentional for the v1 deterministic parser and is
+        #   documented explicitly here so the Phase 10 AI team knows the exact
+        #   contract to replace with natural-language extraction.
+        #
+        #   Format:  <verb phrase> <path> [content...]
+        #   Example: "write to notes.txt hello world"
+        #            → intent="write_file", target="notes.txt", value="hello world"
+        #
+        # NOTE FOR PHASE 10 AI TEAM:
+        #   Replace _extract_path_and_value() with an LLM-based entity extractor
+        #   that handles quoted strings, relative paths, and multi-word paths
+        #   (e.g. "my documents/report"). The positional split below will break
+        #   on paths containing spaces — this is the known limitation of v1.
+        # -------------------------------------------------------------------------
+
+        # --- create_file ---
+        for phrase in ("create file ", "make file ", "new file "):
+            if text.startswith(phrase):
+                path, _, content = text[len(phrase):].partition(" ")
+                return Intent(intent="create_file", target=path.strip(), value=content.strip() or None)
+
+        # --- read_file ---
+        for phrase in ("read file ", "show file ", "open file "):
+            if text.startswith(phrase):
+                path = text[len(phrase):].strip()
+                return Intent(intent="read_file", target=path)
+
+        # --- write_file ---
+        for phrase in ("write to ", "write file "):
+            if text.startswith(phrase):
+                path, _, content = text[len(phrase):].partition(" ")
+                return Intent(intent="write_file", target=path.strip(), value=content.strip() or None)
+
+        # --- append_file ---
+        for phrase in ("append to ", "add to file "):
+            if text.startswith(phrase):
+                path, _, content = text[len(phrase):].partition(" ")
+                return Intent(intent="append_file", target=path.strip(), value=content.strip() or None)
+
+        # --- delete_file ---
+        for phrase in ("delete file ", "remove file "):
+            if text.startswith(phrase):
+                path = text[len(phrase):].strip()
+                return Intent(intent="delete_file", target=path)
+
+        # --- copy_file ---
+        if text.startswith("copy file "):
+            rest = text[len("copy file "):].strip()
+            # Positional: first token = src, second token = dst
+            parts = rest.split(" ", 1)
+            src = parts[0] if parts else ""
+            dst = parts[1] if len(parts) > 1 else ""
+            return Intent(intent="copy_file", target=src, value=dst or None)
+
+        # --- move_file ---
+        if text.startswith("move file "):
+            rest = text[len("move file "):].strip()
+            parts = rest.split(" ", 1)
+            src = parts[0] if parts else ""
+            dst = parts[1] if len(parts) > 1 else ""
+            return Intent(intent="move_file", target=src, value=dst or None)
+
+        # --- create_folder ---
+        for phrase in ("create folder ", "make folder ", "new folder ", "mkdir "):
+            if text.startswith(phrase):
+                path = text[len(phrase):].strip()
+                return Intent(intent="create_folder", target=path)
+
+        # --- delete_folder ---
+        for phrase in ("delete folder ", "remove folder "):
+            if text.startswith(phrase):
+                path = text[len(phrase):].strip()
+                return Intent(intent="delete_folder", target=path)
+
+        # --- move_folder (Q2: separate intent name, shared adapter backend) ---
+        if text.startswith("move folder "):
+            rest = text[len("move folder "):].strip()
+            parts = rest.split(" ", 1)
+            src = parts[0] if parts else ""
+            dst = parts[1] if len(parts) > 1 else ""
+            return Intent(intent="move_folder", target=src, value=dst or None)
+
+        # --- list_directory ---
+        for phrase in ("list folder ", "list files ", "list file ", "list directory ", "ls ", "dir "):
+            if text.startswith(phrase):
+                path = text[len(phrase):].strip() or "."
+                return Intent(intent="list_directory", target=path)
+        # Bare "ls" / "dir" / "list files" / "list file" with no argument defaults to workspace root
+        if text in ("ls", "dir", "list files", "list file", "list folder", "list directory"):
+            return Intent(intent="list_directory", target=".")
 
         return Intent(intent="unknown")
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import shutil
+
 import datetime
 import logging
 import os
@@ -21,6 +23,7 @@ from .terminal_windows import (
 )
 from core.executor.window_executor import close_file_explorer_windows_impl
 from core.intent_resolution import terminal_close_request_key
+from core.security.path_guard import PathGuard
 from core.security.process_kill_policy import is_global_mass_kill_blocked, normalize_exe_name
 from core.security.terminal_trust import (
     RiskLevel,
@@ -78,6 +81,9 @@ class WindowsAdapter(BaseAdapter):
         self._last_terminal_launch_key: str | None = None
         self._pending_risky_close: PendingRiskyClose | None = None
         self._pending_disambiguation: PendingTerminalDisambiguation | None = None
+        # PathGuard reads workspace_root from config/settings.json.
+        # Falls back to repo_root/workspace on missing or invalid config.
+        self._path_guard = PathGuard()
 
     def try_resolve_pending_risky_close(self, text: str) -> str | None:
         """
@@ -351,3 +357,218 @@ class WindowsAdapter(BaseAdapter):
     def get_memory_usage(self):
         usage = psutil.virtual_memory().percent
         return f"Current Memory usage: {usage}%"
+
+    # -------------------------------------------------------------------------
+    # Phase 9 — File System Tools
+    # All methods call PathGuard.sanitize_path() as the mandatory first gate.
+    # No I/O is performed until the path is verified inside the sandbox.
+    # -------------------------------------------------------------------------
+
+    def create_file(self, path: str, content: str = "") -> ActionResult:
+        """Create a new file inside the workspace sandbox.
+
+        PathGuard validates the path first. Parent directories are created
+        automatically. Returns a non-recoverable failure for sandbox violations.
+        """
+        ok, resolved, msg = self._path_guard.sanitize_path(path)
+        if not ok:
+            logger.error("create_file blocked: %s", msg)
+            return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
+        try:
+            resolved.parent.mkdir(parents=True, exist_ok=True)
+            resolved.write_text(content, encoding="utf-8")
+            return ActionResult(success=True, message=f"File created: {resolved.name}")
+        except OSError as exc:
+            logger.error("create_file OS error: path=%r error=%r", str(resolved), str(exc))
+            return ActionResult(success=False, message=f"Could not create file: {exc}", recoverable=True)
+
+    def read_file(self, path: str) -> ActionResult:
+        """Read and return the text content of a sandboxed file."""
+        ok, resolved, msg = self._path_guard.sanitize_path(path)
+        if not ok:
+            logger.error("read_file blocked: %s", msg)
+            return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
+        try:
+            content = resolved.read_text(encoding="utf-8")
+            return ActionResult(
+                success=True,
+                message=f"{resolved.name} contents:\n{content}",
+                data={"content": content, "path": resolved.name},
+            )
+        except FileNotFoundError:
+            return ActionResult(success=False, message=f"File not found: {resolved.name}", recoverable=False)
+        except OSError as exc:
+            logger.error("read_file OS error: path=%r error=%r", str(resolved), str(exc))
+            return ActionResult(success=False, message=f"Could not read file: {exc}", recoverable=True)
+
+    def write_file(self, path: str, content: str) -> ActionResult:
+        """Overwrite a sandboxed file with new content, creating it if needed."""
+        ok, resolved, msg = self._path_guard.sanitize_path(path)
+        if not ok:
+            logger.error("write_file blocked: %s", msg)
+            return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
+        try:
+            resolved.parent.mkdir(parents=True, exist_ok=True)
+            resolved.write_text(content, encoding="utf-8")
+            return ActionResult(success=True, message=f"{resolved.name} written.")
+        except OSError as exc:
+            logger.error("write_file OS error: path=%r error=%r", str(resolved), str(exc))
+            return ActionResult(success=False, message=f"Could not write file: {exc}", recoverable=True)
+
+    def append_file(self, path: str, content: str) -> ActionResult:
+        """Append content to a sandboxed file, creating it if needed."""
+        ok, resolved, msg = self._path_guard.sanitize_path(path)
+        if not ok:
+            logger.error("append_file blocked: %s", msg)
+            return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
+        try:
+            resolved.parent.mkdir(parents=True, exist_ok=True)
+            with resolved.open("a", encoding="utf-8") as fh:
+                fh.write(content)
+            return ActionResult(success=True, message=f"Content appended to {resolved.name}.")
+        except OSError as exc:
+            logger.error("append_file OS error: path=%r error=%r", str(resolved), str(exc))
+            return ActionResult(success=False, message=f"Could not append to file: {exc}", recoverable=True)
+
+    def delete_file(self, path: str) -> ActionResult:
+        """Permanently delete a sandboxed file.
+
+        DESTRUCTIVE — the IntentEngine PendingRiskyClose confirmation gate
+        must obtain explicit user consent before calling this method.
+        """
+        ok, resolved, msg = self._path_guard.sanitize_path(path)
+        if not ok:
+            logger.error("delete_file blocked: %s", msg)
+            return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
+        try:
+            resolved.unlink()
+            return ActionResult(success=True, message=f"{resolved.name} deleted.", recoverable=False)
+        except FileNotFoundError:
+            return ActionResult(success=False, message=f"File not found: {resolved.name}", recoverable=False)
+        except OSError as exc:
+            logger.error("delete_file OS error: path=%r error=%r", str(resolved), str(exc))
+            return ActionResult(success=False, message=f"Could not delete file: {exc}", recoverable=True)
+
+    def copy_file(self, src: str, dst: str) -> ActionResult:
+        """Copy a file within the workspace sandbox. Both paths are validated independently."""
+        ok_src, resolved_src, msg_src = self._path_guard.sanitize_path(src)
+        if not ok_src:
+            logger.error("copy_file src blocked: %s", msg_src)
+            return ActionResult(success=False, message=f"Access denied (source): {msg_src}", recoverable=False)
+        ok_dst, resolved_dst, msg_dst = self._path_guard.sanitize_path(dst)
+        if not ok_dst:
+            logger.error("copy_file dst blocked: %s", msg_dst)
+            return ActionResult(success=False, message=f"Access denied (destination): {msg_dst}", recoverable=False)
+        try:
+            resolved_dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(resolved_src, resolved_dst)
+            return ActionResult(success=True, message=f"Copied {resolved_src.name} \u2192 {resolved_dst.name}.")
+        except FileNotFoundError:
+            return ActionResult(success=False, message=f"Source not found: {resolved_src.name}", recoverable=False)
+        except OSError as exc:
+            logger.error("copy_file OS error: src=%r dst=%r error=%r", str(resolved_src), str(resolved_dst), str(exc))
+            return ActionResult(success=False, message=f"Could not copy file: {exc}", recoverable=True)
+
+    def move_file(self, src: str, dst: str) -> ActionResult:
+        """Move or rename a file within the workspace sandbox.
+
+        Shares the _move_path backend with move_folder (Q2 architectural decision).
+        IntentEngine logs this as 'move_file' telemetry; move_folder logs as 'move_folder'.
+        """
+        return self._move_path(src, dst, kind="file")
+
+    def create_folder(self, path: str) -> ActionResult:
+        """Create a directory (and any missing parents) inside the workspace sandbox."""
+        ok, resolved, msg = self._path_guard.sanitize_path(path)
+        if not ok:
+            logger.error("create_folder blocked: %s", msg)
+            return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
+        try:
+            resolved.mkdir(parents=True, exist_ok=True)
+            return ActionResult(success=True, message=f"Folder created: {resolved.name}")
+        except OSError as exc:
+            logger.error("create_folder OS error: path=%r error=%r", str(resolved), str(exc))
+            return ActionResult(success=False, message=f"Could not create folder: {exc}", recoverable=True)
+
+    def delete_folder(self, path: str) -> ActionResult:
+        """Recursively delete a sandboxed directory.
+
+        DESTRUCTIVE — the IntentEngine PendingRiskyClose confirmation gate
+        must obtain explicit user consent before calling this method.
+        """
+        ok, resolved, msg = self._path_guard.sanitize_path(path)
+        if not ok:
+            logger.error("delete_folder blocked: %s", msg)
+            return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
+        try:
+            shutil.rmtree(resolved)
+            return ActionResult(success=True, message=f"Folder '{resolved.name}' deleted.", recoverable=False)
+        except FileNotFoundError:
+            return ActionResult(success=False, message=f"Folder not found: {resolved.name}", recoverable=False)
+        except OSError as exc:
+            logger.error("delete_folder OS error: path=%r error=%r", str(resolved), str(exc))
+            return ActionResult(success=False, message=f"Could not delete folder: {exc}", recoverable=True)
+
+    def move_folder(self, src: str, dst: str) -> ActionResult:
+        """Move or rename a directory within the workspace sandbox.
+
+        Shares the _move_path backend with move_file (Q2 architectural decision).
+        IntentEngine logs this as 'move_folder' telemetry; move_file logs as 'move_file'.
+        """
+        return self._move_path(src, dst, kind="folder")
+
+    def list_directory(self, path: str = ".") -> ActionResult:
+        """List the immediate children of a sandboxed directory."""
+        ok, resolved, msg = self._path_guard.sanitize_path(path)
+        if not ok:
+            logger.error("list_directory blocked: %s", msg)
+            return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
+        try:
+            entries = sorted(p.name for p in resolved.iterdir())
+            listing = "\n".join(entries) if entries else "(empty)"
+            return ActionResult(
+                success=True,
+                message=f"Contents of {resolved.name}:\n{listing}",
+                data={"entries": entries, "path": resolved.name},
+            )
+        except FileNotFoundError:
+            return ActionResult(success=False, message=f"Directory not found: {resolved.name}", recoverable=False)
+        except NotADirectoryError:
+            return ActionResult(success=False, message=f"Not a directory: {resolved.name}", recoverable=False)
+        except OSError as exc:
+            logger.error("list_directory OS error: path=%r error=%r", str(resolved), str(exc))
+            return ActionResult(success=False, message=f"Could not list directory: {exc}", recoverable=True)
+
+    # -------------------------------------------------------------------------
+    # Shared move/rename backend (Q2 architectural decision)
+    # Consolidates move_file and move_folder into a single implementation.
+    # IntentEngine keeps them as separate telemetry events.
+    # -------------------------------------------------------------------------
+
+    def _move_path(self, src: str, dst: str, kind: str) -> ActionResult:
+        """Shared backend for move_file and move_folder.
+
+        Both paths are independently validated by PathGuard before any I/O.
+        The *kind* parameter ('file' or 'folder') appears only in user-facing
+        messages; telemetry differentiation is the responsibility of IntentEngine.
+        """
+        ok_src, resolved_src, msg_src = self._path_guard.sanitize_path(src)
+        if not ok_src:
+            logger.error("move_%s src blocked: %s", kind, msg_src)
+            return ActionResult(success=False, message=f"Access denied (source): {msg_src}", recoverable=False)
+        ok_dst, resolved_dst, msg_dst = self._path_guard.sanitize_path(dst)
+        if not ok_dst:
+            logger.error("move_%s dst blocked: %s", kind, msg_dst)
+            return ActionResult(success=False, message=f"Access denied (destination): {msg_dst}", recoverable=False)
+        try:
+            resolved_dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(resolved_src), str(resolved_dst))
+            return ActionResult(success=True, message=f"Moved {resolved_src.name} \u2192 {resolved_dst.name}.")
+        except FileNotFoundError:
+            return ActionResult(success=False, message=f"Source not found: {resolved_src.name}", recoverable=False)
+        except OSError as exc:
+            logger.error(
+                "move_%s OS error: src=%r dst=%r error=%r",
+                kind, str(resolved_src), str(resolved_dst), str(exc),
+            )
+            return ActionResult(success=False, message=f"Could not move {kind}: {exc}", recoverable=True)

@@ -9,5 +9,16 @@
   "not_implemented": true,
   "dangerous_system": false,
   "confirm_yes": true,
-  "confirm_no": true
+  "confirm_no": true,
+  "create_file": true,
+  "read_file": true,
+  "write_file": true,
+  "append_file": true,
+  "delete_file": true,
+  "copy_file": true,
+  "move_file": true,
+  "create_folder": true,
+  "delete_folder": true,
+  "move_folder": true,
+  "list_directory": true
 }
