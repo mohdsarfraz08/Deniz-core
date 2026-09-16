@@ -30,6 +30,40 @@ class MiniExecutor:
     def get_memory_usage(self) -> str:
         return "mem"
 
+    # Phase 9 file tool stubs
+    def create_file(self, path: str, content: str = "") -> ActionResult:
+        return ActionResult(success=True, message=f"File created: {path}")
+
+    def read_file(self, path: str) -> ActionResult:
+        return ActionResult(success=True, message=f"{path} contents:\n(empty)", data={"content": "", "path": path})
+
+    def write_file(self, path: str, content: str) -> ActionResult:
+        return ActionResult(success=True, message=f"{path} written.")
+
+    def append_file(self, path: str, content: str) -> ActionResult:
+        return ActionResult(success=True, message=f"Content appended to {path}.")
+
+    def delete_file(self, path: str) -> ActionResult:
+        return ActionResult(success=True, message=f"{path} deleted.", recoverable=False)
+
+    def copy_file(self, src: str, dst: str) -> ActionResult:
+        return ActionResult(success=True, message=f"Copied {src} \u2192 {dst}.")
+
+    def move_file(self, src: str, dst: str) -> ActionResult:
+        return ActionResult(success=True, message=f"Moved {src} \u2192 {dst}.")
+
+    def create_folder(self, path: str) -> ActionResult:
+        return ActionResult(success=True, message=f"Folder created: {path}")
+
+    def delete_folder(self, path: str) -> ActionResult:
+        return ActionResult(success=True, message=f"Folder '{path}' deleted.", recoverable=False)
+
+    def move_folder(self, src: str, dst: str) -> ActionResult:
+        return ActionResult(success=True, message=f"Moved {src} \u2192 {dst}.")
+
+    def list_directory(self, path: str = ".") -> ActionResult:
+        return ActionResult(success=True, message="Contents of workspace:\n(empty)", data={"entries": [], "path": path})
+
 
 class SessionTestExecutor(MiniExecutor):
     """Executor with distinct CPU/memory responses for session follow-up tests."""
