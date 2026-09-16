@@ -2,7 +2,7 @@
 
 **Guiding Principle:** We build in 7 Phases. Each phase produces a runnable artifact. No feature is started until the previous version is reviewed and stabilized.
 
-**Implementation snapshot (kept in sync with the repo):** Phases 1–5 and **Phase 7** are done (~195 tests, 80% coverage gate on Windows CI). **Phase 6** (minimal Linux adapter + OS auto-detect + Ubuntu CI) is in progress or complete per latest commit.
+**Implementation snapshot (kept in sync with the repo):** Phases 1–9 are complete. **Phase 8** (Execution Hardening) closed at 305 tests, 81.95% coverage. **Phase 9** (Tool Expansion) closed at 490 tests, 82.95% coverage, 0 regressions. **Phase 10** (AI Foundation Layer) is the active milestone.
 
 ---
 
@@ -196,6 +196,8 @@ Log:
 
 Reliable execution layer that AI can safely depend on.
 
+**Status: ✅ COMPLETED — Phase 8 merged to `main`. 305 tests · 81.95% coverage · 0 regressions.**
+
 ---
 
 # 🔵 PHASE 9 — Tool Expansion
@@ -265,9 +267,25 @@ Implement all contracts.
 
 Deniz can manipulate the operating system safely.
 
+**Status: ✅ COMPLETED — Phase 9 merged to `phase-9-tool-expansion`. 490 tests · 82.95% coverage · 0 regressions.**
+
+### Architectural Decisions (locked)
+
+| # | Decision | Rationale |
+|---|---|---|
+| Q1 | Parser extraction: **Option A (Positional)** | v1 deterministic parity; documented for Phase 10 AI team to replace |
+| Q2 | `move_file`/`move_folder`: **shared `_move_path` backend, separate intent names** | Consolidates I/O logic; preserves distinct telemetry events |
+| Q3 | `search_files`: **deferred to Phase 10** | Scope management; requires LLM-bounded recursion depth |
+
+### Scope Boundaries
+
+- **In scope (delivered):** `create_file`, `read_file`, `write_file`, `append_file`, `delete_file`, `copy_file`, `move_file`, `create_folder`, `delete_folder`, `move_folder`, `list_directory`
+- **Deferred to Phase 10:** `search_files`, `start_process`, `stop_process`, `restart_process`, `check_disk`, `check_battery`
+- **Security:** `PathGuard` 3-layer sandbox enforced on every file tool. Destructive ops require explicit user confirmation (AI Ethics gate).
+
 ---
 
-# 🔵 PHASE 10 — AI Foundation Layer
+# 🟡 PHASE 10 — AI Foundation Layer ← **ACTIVE MILESTONE**
 
 **Goal:** Introduce LLM support without changing execution logic.
 
