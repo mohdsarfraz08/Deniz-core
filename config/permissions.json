@@ -14,11 +14,11 @@
   "read_file": true,
   "write_file": true,
   "append_file": true,
-  "delete_file": false,
+  "delete_file": true,
   "copy_file": true,
   "move_file": true,
   "create_folder": true,
-  "delete_folder": false,
+  "delete_folder": true,
   "move_folder": true,
   "list_directory": true
 }

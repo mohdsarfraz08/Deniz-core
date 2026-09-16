@@ -174,12 +174,12 @@ class CommandParser:
             return Intent(intent="move_folder", target=src, value=dst or None)
 
         # --- list_directory ---
-        for phrase in ("list folder ", "list files ", "ls ", "dir "):
+        for phrase in ("list folder ", "list files ", "list file ", "list directory ", "ls ", "dir "):
             if text.startswith(phrase):
                 path = text[len(phrase):].strip() or "."
                 return Intent(intent="list_directory", target=path)
-        # Bare "ls" / "dir" with no argument defaults to workspace root
-        if text in ("ls", "dir", "list files", "list folder"):
+        # Bare "ls" / "dir" / "list files" / "list file" with no argument defaults to workspace root
+        if text in ("ls", "dir", "list files", "list file", "list folder", "list directory"):
             return Intent(intent="list_directory", target=".")
 
         return Intent(intent="unknown")
