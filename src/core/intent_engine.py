@@ -86,7 +86,7 @@ class IntentEngine:
     # Intent Handlers
     # ---------------------------
 
-    def _handle_greet(self, intent: Intent = None) -> str:
+    def _handle_greet(self, intent: Intent | None = None) -> str:
         return "Hello. System operational."
 
     def _handle_open_app(self, intent: Intent) -> str:
@@ -105,13 +105,13 @@ class IntentEngine:
 
         return self.system_executor.close_app(intent.target)
 
-    def _handle_get_time(self, intent: Intent = None) -> str:
+    def _handle_get_time(self, intent: Intent | None = None) -> str:
         return self.system_executor.get_time()
 
-    def _handle_cpu(self, intent: Intent = None) -> str:
+    def _handle_cpu(self, intent: Intent | None = None) -> str:
         return self.system_executor.get_cpu_usage()
 
-    def _handle_memory(self, intent: Intent = None) -> str:
+    def _handle_memory(self, intent: Intent | None = None) -> str:
         return self.system_executor.get_memory_usage()
 
     # -------------------------------------------------------------------------

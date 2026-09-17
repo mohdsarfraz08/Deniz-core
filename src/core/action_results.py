@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Literal, NotRequired, TypedDict
+from typing import Literal, NotRequired, TypedDict, overload
 
 
 # ---------------------------------------------------------------------------
@@ -70,6 +70,10 @@ _PII_PATTERNS: list[re.Pattern[str]] = [
 ]
 
 
+@overload
+def sanitise_for_audit(value: str) -> str: ...
+@overload
+def sanitise_for_audit(value: None) -> None: ...
 def sanitise_for_audit(value: str | None) -> str | None:
     """
     Redact username-bearing path segments before writing to audit logs.
