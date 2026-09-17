@@ -371,7 +371,7 @@ class WindowsAdapter(BaseAdapter):
         automatically. Returns a non-recoverable failure for sandbox violations.
         """
         ok, resolved, msg = self._path_guard.sanitize_path(path)
-        if not ok:
+        if not ok or resolved is None:
             logger.error("create_file blocked: %s", msg)
             return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
         try:
@@ -385,7 +385,7 @@ class WindowsAdapter(BaseAdapter):
     def read_file(self, path: str) -> ActionResult:
         """Read and return the text content of a sandboxed file."""
         ok, resolved, msg = self._path_guard.sanitize_path(path)
-        if not ok:
+        if not ok or resolved is None:
             logger.error("read_file blocked: %s", msg)
             return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
         try:
@@ -404,7 +404,7 @@ class WindowsAdapter(BaseAdapter):
     def write_file(self, path: str, content: str) -> ActionResult:
         """Overwrite a sandboxed file with new content, creating it if needed."""
         ok, resolved, msg = self._path_guard.sanitize_path(path)
-        if not ok:
+        if not ok or resolved is None:
             logger.error("write_file blocked: %s", msg)
             return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
         try:
@@ -418,7 +418,7 @@ class WindowsAdapter(BaseAdapter):
     def append_file(self, path: str, content: str) -> ActionResult:
         """Append content to a sandboxed file, creating it if needed."""
         ok, resolved, msg = self._path_guard.sanitize_path(path)
-        if not ok:
+        if not ok or resolved is None:
             logger.error("append_file blocked: %s", msg)
             return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
         try:
@@ -437,7 +437,7 @@ class WindowsAdapter(BaseAdapter):
         must obtain explicit user consent before calling this method.
         """
         ok, resolved, msg = self._path_guard.sanitize_path(path)
-        if not ok:
+        if not ok or resolved is None:
             logger.error("delete_file blocked: %s", msg)
             return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
         try:
@@ -452,11 +452,11 @@ class WindowsAdapter(BaseAdapter):
     def copy_file(self, src: str, dst: str) -> ActionResult:
         """Copy a file within the workspace sandbox. Both paths are validated independently."""
         ok_src, resolved_src, msg_src = self._path_guard.sanitize_path(src)
-        if not ok_src:
+        if not ok_src or resolved_src is None:
             logger.error("copy_file src blocked: %s", msg_src)
             return ActionResult(success=False, message=f"Access denied (source): {msg_src}", recoverable=False)
         ok_dst, resolved_dst, msg_dst = self._path_guard.sanitize_path(dst)
-        if not ok_dst:
+        if not ok_dst or resolved_dst is None:
             logger.error("copy_file dst blocked: %s", msg_dst)
             return ActionResult(success=False, message=f"Access denied (destination): {msg_dst}", recoverable=False)
         try:
@@ -480,7 +480,7 @@ class WindowsAdapter(BaseAdapter):
     def create_folder(self, path: str) -> ActionResult:
         """Create a directory (and any missing parents) inside the workspace sandbox."""
         ok, resolved, msg = self._path_guard.sanitize_path(path)
-        if not ok:
+        if not ok or resolved is None:
             logger.error("create_folder blocked: %s", msg)
             return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
         try:
@@ -497,7 +497,7 @@ class WindowsAdapter(BaseAdapter):
         must obtain explicit user consent before calling this method.
         """
         ok, resolved, msg = self._path_guard.sanitize_path(path)
-        if not ok:
+        if not ok or resolved is None:
             logger.error("delete_folder blocked: %s", msg)
             return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
         try:
@@ -520,7 +520,7 @@ class WindowsAdapter(BaseAdapter):
     def list_directory(self, path: str = ".") -> ActionResult:
         """List the immediate children of a sandboxed directory."""
         ok, resolved, msg = self._path_guard.sanitize_path(path)
-        if not ok:
+        if not ok or resolved is None:
             logger.error("list_directory blocked: %s", msg)
             return ActionResult(success=False, message=f"Access denied: {msg}", recoverable=False)
         try:
@@ -553,11 +553,11 @@ class WindowsAdapter(BaseAdapter):
         messages; telemetry differentiation is the responsibility of IntentEngine.
         """
         ok_src, resolved_src, msg_src = self._path_guard.sanitize_path(src)
-        if not ok_src:
+        if not ok_src or resolved_src is None:
             logger.error("move_%s src blocked: %s", kind, msg_src)
             return ActionResult(success=False, message=f"Access denied (source): {msg_src}", recoverable=False)
         ok_dst, resolved_dst, msg_dst = self._path_guard.sanitize_path(dst)
-        if not ok_dst:
+        if not ok_dst or resolved_dst is None:
             logger.error("move_%s dst blocked: %s", kind, msg_dst)
             return ActionResult(success=False, message=f"Access denied (destination): {msg_dst}", recoverable=False)
         try:

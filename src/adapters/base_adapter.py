@@ -5,19 +5,19 @@ from core.action_results import ActionResult
 
 class BaseAdapter(ABC):
     @abstractmethod
-    def execute_command(self, command: str):
+    def execute_command(self, command: str) -> str:
         pass
 
     @abstractmethod
-    def get_status(self):
+    def get_status(self) -> str:
         pass
 
     @abstractmethod
-    def open_app(self, app_name: str):
+    def open_app(self, app_name: str) -> str:
         pass
 
     @abstractmethod
-    def close_app(self, app_name: str):
+    def close_app(self, app_name: str) -> str:
         pass
 
     @abstractmethod
@@ -25,15 +25,15 @@ class BaseAdapter(ABC):
         pass
 
     @abstractmethod
-    def get_time(self):
+    def get_time(self) -> str:
         pass
 
     @abstractmethod
-    def get_cpu_usage(self):
+    def get_cpu_usage(self) -> str:
         pass
 
     @abstractmethod
-    def get_memory_usage(self):
+    def get_memory_usage(self) -> str:
         pass
 
     # -------------------------------------------------------------------------
