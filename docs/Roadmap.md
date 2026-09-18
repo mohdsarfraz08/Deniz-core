@@ -2,7 +2,7 @@
 
 **Guiding Principle:** We build in 7 Phases. Each phase produces a runnable artifact. No feature is started until the previous version is reviewed and stabilized.
 
-**Implementation snapshot (kept in sync with the repo):** Phases 1–9 are complete. **Phase 8** (Execution Hardening) closed at 305 tests, 81.95% coverage. **Phase 9** (Tool Expansion) closed at 490 tests, 82.95% coverage, 0 regressions. **Phase 10** (AI Foundation Layer) is the active milestone.
+**Implementation snapshot (kept in sync with the repo):** Phases 1–10 are complete. **Phase 8** (Execution Hardening) closed at 305 tests, 81.95% coverage. **Phase 9** (Tool Expansion) closed at 490 tests, 82.95% coverage, 0 regressions. **Phase 10** (AI Foundation Layer) closed at 587 tests, 84.67% coverage, 0 regressions. **Phase 11** (Hybrid Router) is the active milestone.
 
 ---
 
@@ -285,67 +285,81 @@ Deniz can manipulate the operating system safely.
 
 ---
 
-# 🟡 PHASE 10 — AI Foundation Layer ← **ACTIVE MILESTONE**
-
+# 🔵 PHASE 10 — AI Foundation Layer ✅
+ 
 **Goal:** Introduce LLM support without changing execution logic.
-
+ 
 ## New Structure
-
+ 
 ```text
 src/
 └── ai/
-    ├── models/
-    ├── providers/
+    ├── __init__.py
+    ├── schema.py
     ├── classifier.py
-    ├── schema_validator.py
-    └── prompt_builder.py
+    ├── router.py
+    ├── prompt_builder.py
+    └── providers/
+        ├── __init__.py
+        ├── base_provider.py
+        ├── nebius_provider.py
+        ├── ollama_provider.py
+        ├── openai_provider.py
+        └── gemini_provider.py
 ```
-
+ 
 ## Provider Layer
-
+ 
 Support:
-
+ 
 ```text
-OpenAI
-Gemini
-Ollama
+Nebius Token Factory (NVIDIA Nemotron 30B / 70B / 120B) — Tier 2
+Ollama (Local Edge Engine) — Tier 1
+OpenAI (Cloud fallback)
+Gemini (Cloud fallback)
 ```
-
-through a common interface.
-
+ 
+through a common interface (`AbstractProvider`).
+ 
 ## Intent Schema
-
+ 
 ```python
 @dataclass
 class IntentResult:
     intent: str
     target: str | None
+    value: str | None
     confidence: float
+    raw_response: str
+    tier: int
 ```
-
+ 
 ## Example
-
+ 
 Input:
-
+ 
 ```text
 please launch my browser
 ```
-
+ 
 Output:
-
+ 
 ```json
 {
   "intent": "open_app",
   "target": "chrome",
+  "value": null,
   "confidence": 0.95
 }
 ```
-
+ 
 ## 🎯 Deliverable
-
+ 
 AI classification works independently.
-
+ 
 No engine integration yet.
+
+**Status: ✅ COMPLETED — Phase 10 merged/ready on `phase-10-ai-foundation`. 587 tests · 84.67% coverage · 0 regressions.**
 
 ---
 
