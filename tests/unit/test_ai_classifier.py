@@ -618,3 +618,26 @@ class TestProviderEdgeCases:
         with pytest.raises(ProviderError) as exc_info:
             provider.classify("hi")
         assert exc_info.value.recoverable is False
+
+
+# ===========================================================================
+# 11. AI Package __getattr__ Dynamic Exports Tests
+# ===========================================================================
+
+
+class TestAiPackageExports:
+
+    def test_dynamic_exports(self) -> None:
+        import ai
+
+        assert ai.AIClassifier is not None
+        assert ai.PromptBuilder is not None
+        assert ai.TriageRouter is not None
+        assert ai.Sensitivity is not None
+        assert ai.TriageDecision is not None
+
+    def test_unknown_export_raises_attribute_error(self) -> None:
+        import ai
+
+        with pytest.raises(AttributeError, match="has no attribute 'NonExistent'"):
+            _ = ai.NonExistent
