@@ -1,0 +1,31 @@
+{
+  "tier2": {
+    "provider": "nebius",
+    "model": "nvidia/llama-3.1-nemotron-70b-instruct",
+    "timeout_s": 30.0,
+    "max_retries": 2,
+    "data_governance": {
+      "pii_scrubbing": true,
+      "input_logged_to_audit": true,
+      "data_leaves_device": true,
+      "provider": "Nebius AI Studio",
+      "provider_privacy_policy": "https://nebius.com/legal/privacy-policy",
+      "model_vendor": "NVIDIA",
+      "model_license": "NVIDIA Open Model License"
+    }
+  },
+  "tier1": {
+    "provider": "ollama",
+    "model": "llama3.2",
+    "timeout_s": 10.0,
+    "max_retries": 1,
+    "data_governance": {
+      "pii_scrubbing": false,
+      "data_leaves_device": false
+    }
+  },
+  "tier0": {
+    "provider": "deterministic",
+    "description": "Zero latency deterministic command parser"
+  }
+}
