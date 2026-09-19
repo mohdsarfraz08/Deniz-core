@@ -36,7 +36,7 @@ def test_engine_internal_error_when_executor_raises(tmp_path: Path) -> None:
 
 
 def test_engine_init_propagates_executor_construct_failure() -> None:
-    class Bad:
+    class Bad(MiniExecutor):
         def __init__(self) -> None:
             raise RuntimeError("cannot construct adapter")
 
