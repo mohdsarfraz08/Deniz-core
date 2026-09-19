@@ -1,4 +1,4 @@
-﻿# Folder Structure
+# Folder Structure
 
 ```Folder Struct
 Deniz/
@@ -38,26 +38,54 @@ Deniz/
 │   ├── embeddings/
 │   └── database/
 │
-├── src/
+├── scripts/
 │
+├── src/
+│   │
 │   ├── engine.py
 │   │
 │   ├── ai/
 │   │   ├── __init__.py
+│   │   ├── schema.py
+│   │   ├── classifier.py
+│   │   ├── router.py
+│   │   ├── prompt_builder.py
 │   │   │
-│   │   ├── planner/
-│   │   ├── reasoning/
-│   │   ├── memory/
+│   │   ├── providers/
+│   │   │   ├── __init__.py
+│   │   │   ├── base_provider.py
+│   │   │   ├── nebius_provider.py
+│   │   │   ├── gemini_provider.py
+│   │   │   ├── openai_provider.py
+│   │   │   └── ollama_provider.py
+│   │   │
 │   │   ├── models/
-│   │   ├── prompts/
+│   │   │   ├── base_model.py
+│   │   │   ├── local_model.py
+│   │   │   └── model_registry.py
+│   │   │
+│   │   ├── reasoning/
+│   │   ├── planner/
+│   │   ├── memory/
 │   │   ├── embeddings/
 │   │   ├── tools/
+│   │   └── training/
+│   │
+│   ├── perception/
 │   │   ├── vision/
-│   │   └── speech/
+│   │   │   ├── screenshot.py
+│   │   │   ├── ocr.py
+│   │   │   ├── object_detection.py
+│   │   │   └── image_matching.py
+│   │   │
+│   │   ├── speech/
+│   │   │   ├── speech_to_text.py
+│   │   │   └── text_to_speech.py
+│   │   │
+│   │   └── input/
 │   │
 │   ├── automation/
 │   │   ├── __init__.py
-│   │   │
 │   │   ├── manager.py
 │   │   ├── session.py
 │   │   │
@@ -82,13 +110,13 @@ Deniz/
 │   │   ├── search/
 │   │   │   ├── finder.py
 │   │   │   ├── selectors.py
-│   │   │   ├── cache.py
-│   │   │   └── filters.py
+│   │   │   ├── filters.py
+│   │   │   └── cache.py
 │   │   │
 │   │   ├── readers/
 │   │   │   ├── ui_reader.py
-│   │   │   ├── window_reader.py
-│   │   │   └── element_reader.py
+│   │   │   ├── element_reader.py
+│   │   │   └── window_reader.py
 │   │   │
 │   │   ├── applications/
 │   │   │   ├── chrome.py
@@ -101,18 +129,11 @@ Deniz/
 │   │   │   ├── excel.py
 │   │   │   └── powerpoint.py
 │   │   │
-│   │   ├── vision/
-│   │   │   ├── screenshot.py
-│   │   │   ├── ocr.py
-│   │   │   ├── template_matching.py
-│   │   │   └── regions.py
-│   │   │
 │   │   ├── models/
 │   │   └── utils/
 │   │
 │   ├── core/
 │   │   ├── __init__.py
-│   │   │
 │   │   ├── parser.py
 │   │   ├── intent_engine.py
 │   │   ├── intent_resolution.py
@@ -122,15 +143,12 @@ Deniz/
 │   │   │
 │   │   ├── execution/
 │   │   │   ├── system_executor.py
-│   │   │   ├── workflow_executor.py
-│   │   │   └── task_executor.py
+│   │   │   ├── task_executor.py
+│   │   │   └── workflow_executor.py
 │   │   │
 │   │   ├── security/
-│   │   │
 │   │   ├── monitoring/
-│   │   │
 │   │   ├── session/
-│   │   │
 │   │   └── workflow/
 │   │
 │   ├── interfaces/
@@ -182,6 +200,6 @@ Deniz/
     ├── integration/
     ├── automation/
     ├── ai/
+    ├── perception/
     ├── api/
     └── fixtures/
-```

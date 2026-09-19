@@ -24,11 +24,11 @@ jobs:
 
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
-        run: pip install -e ".[dev,windows]"
+        run: pip install -e ".[dev,windows,ai]"
 
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,ai]"
 
       - name: Run tests with coverage gate (Windows)
         if: runner.os == 'Windows'

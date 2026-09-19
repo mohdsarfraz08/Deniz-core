@@ -10,6 +10,7 @@ readme = "Readme.md"
 requires-python = ">=3.10"
 dependencies = [
     "psutil==7.2.2",
+    "requests>=2.31.0",
 ]
 
 [project.optional-dependencies]
@@ -19,6 +20,9 @@ windows = [
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
+]
+ai = [
+    "requests>=2.31.0",
 ]
 
 [tool.setuptools.package-dir]
