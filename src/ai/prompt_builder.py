@@ -16,6 +16,7 @@ from typing import Final
 
 from ai.schema import _load_allowed_intents
 from core.action_results import sanitise_for_audit
+from core.security.pii_scrubber import scrub_cloud_payload
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +61,8 @@ class PromptBuilder:
         Returns:
             Formatted prompt string ready for LLM consumption.
         """
-        # AI Ethics Gate: Scrub sensitive path prefixes & user directories before cloud dispatch
-        safe_input = sanitise_for_audit(user_input) if is_cloud else user_input
+        # AI Ethics Gate: Multi-pattern aggressive PII scrubbing before cloud dispatch
+        safe_input = scrub_cloud_payload(user_input).scrubbed_text if is_cloud else user_input
 
         allowed_list_str = ", ".join(f'"{intent}"' for intent in self._allowed_intents)
 
