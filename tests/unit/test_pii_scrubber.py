@@ -349,7 +349,7 @@ class TestLatencyBudget:
         assert 2000 <= len(payload_medium) <= 4000
 
         # Warm-up pass
-        _ = scrub_cloud_payload(payload_medium)
+        res = scrub_cloud_payload(payload_medium)
 
         # Benchmark over 50 iterations
         iterations = 50
@@ -380,6 +380,7 @@ class TestLatencyBudget:
         assert len(payload_10kb) >= 9000
 
         iterations = 30
+        res = scrub_cloud_payload(payload_10kb)
         start = time.perf_counter()
         for _ in range(iterations):
             res = scrub_cloud_payload(payload_10kb)

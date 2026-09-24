@@ -87,6 +87,7 @@ def test_close_file_explorer_windows_counts_managers(mock_iter):
     mock_iter.return_value = [nautilus, other]
     result = LinuxAdapter().close_file_explorer_windows()
     assert result.success is True
+    assert result.data is not None
     assert result.data["count"] == 1
     nautilus.terminate.assert_called_once()
 
@@ -95,6 +96,6 @@ def test_close_file_explorer_windows_counts_managers(mock_iter):
 def test_close_app_handles_access_denied(mock_iter):
     proc = MagicMock()
     proc.info = {"pid": 1, "name": "gedit"}
-    proc.terminate.side_effect = psutil.AccessDenied("nope")
+    proc.terminate.side_effect = psutil.AccessDenied(pid=1, msg="nope")
     mock_iter.return_value = [proc]
     assert "not running" in LinuxAdapter().close_app("gedit").lower()

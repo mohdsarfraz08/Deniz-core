@@ -16,7 +16,12 @@ from pathlib import Path
 
 import pytest
 
-from core.action_results import ActionResult, AuditRecord, sanitise_for_audit
+from core.action_results import (
+    ActionResult,
+    AuditRecord,
+    CloseFileExplorerWindowsResult,
+    sanitise_for_audit,
+)
 from core.audit_log import build_audit_record, write_audit_record
 from core.intent_resolution import format_close_file_explorer_message
 from core.parser import Intent
@@ -42,6 +47,7 @@ class TestActionResult:
 
     def test_data_payload(self) -> None:
         r = ActionResult(success=True, message="", data={"count": 3})
+        assert r.data is not None
         assert r.data["count"] == 3
 
     def test_message_must_be_string(self) -> None:
@@ -210,5 +216,9 @@ class TestFormatCloseFileExplorerActionResult:
 
     def test_legacy_dict_still_works(self) -> None:
         """Backward-compat: old dict format must still produce correct output."""
-        legacy = {"status": "success", "action": "close_file_explorer_windows", "count": 2}
+        legacy: CloseFileExplorerWindowsResult = {
+            "status": "success",
+            "action": "close_file_explorer_windows",
+            "count": 2,
+        }
         assert format_close_file_explorer_message(legacy) == "Closed 2 File Explorer windows."
