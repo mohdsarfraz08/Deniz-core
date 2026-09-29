@@ -22,6 +22,7 @@ import pytest
 from ai.schema import (
     IntentResult,
     IntentValidationError,
+    system_offline_result,
     unknown_result,
     validate_intent_result,
 )
@@ -89,6 +90,35 @@ class TestIntentResult:
     def test_is_actionable_false_when_unknown(self) -> None:
         r = IntentResult(intent="unknown", confidence=0.0)
         assert r.is_actionable is False
+
+    def test_is_offline_true(self) -> None:
+        assert IntentResult(intent="system_offline", confidence=0.0).is_offline is True
+
+    def test_is_offline_false(self) -> None:
+        assert IntentResult(intent="open_app", confidence=0.8).is_offline is False
+
+    def test_is_actionable_false_when_offline(self) -> None:
+        r = IntentResult(intent="system_offline", confidence=0.0)
+        assert r.is_actionable is False
+
+    def test_is_actionable_false_when_offline_even_with_confidence(self) -> None:
+        r = IntentResult(intent="system_offline", confidence=0.9)
+        assert r.is_actionable is False
+
+    def test_is_offline_strictly_immutable(self) -> None:
+        r = IntentResult(intent="system_offline", confidence=0.0)
+        with pytest.raises(AttributeError):
+            r.is_offline = False  # type: ignore[misc]
+
+    def test_is_unknown_strictly_immutable(self) -> None:
+        r = IntentResult(intent="unknown", confidence=0.0)
+        with pytest.raises(AttributeError):
+            r.is_unknown = False  # type: ignore[misc]
+
+    def test_is_actionable_strictly_immutable(self) -> None:
+        r = IntentResult(intent="open_app", confidence=0.9)
+        with pytest.raises(AttributeError):
+            r.is_actionable = False  # type: ignore[misc]
 
     def test_is_actionable_false_when_zero_confidence(self) -> None:
         r = IntentResult(intent="open_app", confidence=0.0)
@@ -299,6 +329,28 @@ class TestAllowlistBinding:
         )
         assert r.intent == "unknown"
 
+    def test_system_offline_always_allowed_even_without_permissions_file(
+        self, tmp_path: Path
+    ) -> None:
+        missing = tmp_path / "nonexistent.json"
+        r = validate_intent_result(
+            {"intent": "system_offline", "confidence": 0.0}, permissions_path=missing
+        )
+        assert r.intent == "system_offline"
+        assert r.is_offline is True
+        assert r.is_actionable is False
+
+    def test_system_offline_always_allowed_with_malformed_permissions_file(
+        self, tmp_path: Path
+    ) -> None:
+        perm = tmp_path / "bad.json"
+        perm.write_text("NOT JSON", encoding="utf-8")
+        r = validate_intent_result(
+            {"intent": "system_offline", "confidence": 0.0}, permissions_path=perm
+        )
+        assert r.intent == "system_offline"
+        assert r.is_offline is True
+
     def test_malformed_permissions_file_falls_back_to_unknown_only(
         self, tmp_path: Path
     ) -> None:
@@ -346,3 +398,67 @@ class TestUnknownResult:
 
     def test_default_tier_is_minus_one(self) -> None:
         assert unknown_result().tier == -1
+
+
+# ---------------------------------------------------------------------------
+# TestSystemOfflineResult (Milestone 11.2)
+# ---------------------------------------------------------------------------
+
+
+class TestSystemOfflineResult:
+
+    def test_returns_system_offline_intent(self) -> None:
+        r = system_offline_result()
+        assert r.intent == "system_offline"
+
+    def test_confidence_is_zero(self) -> None:
+        r = system_offline_result()
+        assert r.confidence == 0.0
+
+    def test_is_offline_property(self) -> None:
+        assert system_offline_result().is_offline is True
+
+    def test_is_unknown_property_is_false(self) -> None:
+        assert system_offline_result().is_unknown is False
+
+    def test_is_not_actionable(self) -> None:
+        assert system_offline_result().is_actionable is False
+
+    def test_raw_response_stores_error_message(self) -> None:
+        r = system_offline_result(
+            error_message="Ollama connection refused on 127.0.0.1:11434", tier=1
+        )
+        assert r.raw_response == "Ollama connection refused on 127.0.0.1:11434"
+        assert r.tier == 1
+
+    def test_default_tier_is_minus_one(self) -> None:
+        assert system_offline_result().tier == -1
+
+    def test_tier_valid_integer(self) -> None:
+        r = system_offline_result(tier=2)
+        assert r.tier == 2
+
+    def test_tier_string_numeric_coerced_safely(self) -> None:
+        r = system_offline_result(tier="1")  # type: ignore[arg-type]
+        assert r.tier == 1
+
+    def test_tier_negative_preserved(self) -> None:
+        r = system_offline_result(tier=-5)
+        assert r.tier == -5
+
+    def test_tier_malformed_string_defaults_minus_one(self) -> None:
+        r = system_offline_result(tier="not_a_number")  # type: ignore[arg-type]
+        assert r.tier == -1
+
+    def test_tier_none_defaults_minus_one(self) -> None:
+        r = system_offline_result(tier=None)  # type: ignore[arg-type]
+        assert r.tier == -1
+
+    def test_none_error_message_handled_as_empty_string(self) -> None:
+        r = system_offline_result(error_message=None)  # type: ignore[arg-type]
+        assert r.raw_response == ""
+
+    def test_target_and_value_are_none(self) -> None:
+        r = system_offline_result("network failure")
+        assert r.target is None
+        assert r.value is None

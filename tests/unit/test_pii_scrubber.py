@@ -14,6 +14,7 @@ Enforces:
 from __future__ import annotations
 
 import logging
+import sys
 import time
 from unittest.mock import MagicMock
 
@@ -367,7 +368,9 @@ class TestLatencyBudget:
         assert "dev-team@deniz-ai.org" not in res.scrubbed_text
 
         # Strict Performance Gate: Average latency on standard payloads must be sub-millisecond (< 0.6 ms)
-        assert avg_latency_ms < 0.6, f"Standard latency budget exceeded: {avg_latency_ms:.3f}ms >= 0.6ms"
+        # Note: sys.settrace (active during pytest --cov) adds bytecode instrumentation overhead
+        limit_ms = 2.0 if sys.gettrace() is not None else 0.6
+        assert avg_latency_ms < limit_ms, f"Standard latency budget exceeded: {avg_latency_ms:.3f}ms >= {limit_ms}ms"
 
     def test_maximum_payload_linear_scaling(self) -> None:
         # Maximum payload stress test (~10 KB)
@@ -390,4 +393,5 @@ class TestLatencyBudget:
 
         assert res.had_pii is True
         # Linear O(N) execution check: 10KB must finish well under 2.5ms without any ReDoS hang
-        assert avg_latency_ms < 2.5, f"10KB payload exceeded linear scaling limit: {avg_latency_ms:.3f}ms >= 2.5ms"
+        limit_10kb_ms = 6.0 if sys.gettrace() is not None else 2.5
+        assert avg_latency_ms < limit_10kb_ms, f"10KB payload exceeded linear scaling limit: {avg_latency_ms:.3f}ms >= {limit_10kb_ms}ms"

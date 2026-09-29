@@ -8,7 +8,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from ai.schema import IntentResult, IntentValidationError, unknown_result, validate_intent_result
+from ai.schema import (
+    IntentResult,
+    IntentValidationError,
+    system_offline_result,
+    unknown_result,
+    validate_intent_result,
+)
 
 if TYPE_CHECKING:
     from ai.classifier import AIClassifier
@@ -23,6 +29,7 @@ __all__ = [
     "Sensitivity",
     "TriageDecision",
     "TriageRouter",
+    "system_offline_result",
     "unknown_result",
     "validate_intent_result",
 ]

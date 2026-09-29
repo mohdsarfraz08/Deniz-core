@@ -42,8 +42,8 @@ logger = logging.getLogger(__name__)
 _REPO_ROOT: Final[Path] = Path(__file__).resolve().parents[2]
 _DEFAULT_PERMISSIONS_PATH: Final[Path] = _REPO_ROOT / "config" / "permissions.json"
 
-# 'unknown' is always a valid intent — it is the fail-closed sentinel value.
-_ALWAYS_ALLOWED: Final[frozenset[str]] = frozenset({"unknown"})
+# 'unknown' and 'system_offline' are always valid intents — fail-closed and outage sentinels.
+_ALWAYS_ALLOWED: Final[frozenset[str]] = frozenset({"unknown", "system_offline"})
 
 
 # ---------------------------------------------------------------------------
@@ -124,9 +124,18 @@ class IntentResult:
         return self.intent == "unknown"
 
     @property
+    def is_offline(self) -> bool:
+        """Return ``True`` when the intent is the transparent outage sentinel ``'system_offline'``."""
+        return self.intent == "system_offline"
+
+    @property
     def is_actionable(self) -> bool:
-        """Return ``True`` when the intent can be dispatched to the execution layer."""
-        return not self.is_unknown and self.confidence > 0.0
+        """Return ``True`` when the intent can be dispatched to the execution layer.
+
+        Neither 'unknown' (language comprehension miss) nor 'system_offline'
+        (infrastructure outage) can ever be actionable.
+        """
+        return not self.is_unknown and not self.is_offline and self.confidence > 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -293,8 +302,8 @@ def validate_intent_result(
 def unknown_result(raw_response: str = "", tier: int = -1) -> IntentResult:
     """Return the canonical fail-closed ``IntentResult``.
 
-    Used by the ``AIClassifier`` whenever a provider fails, returns malformed
-    JSON, or the validator rejects the LLM output.  A confidence of ``0.0``
+    Used by the ``AIClassifier`` whenever a provider returns malformed JSON,
+    or the validator rejects the LLM output. A confidence of ``0.0``
     signals to the Phase 11 Hybrid Router that this result was not produced
     by a model.
 
@@ -305,9 +314,64 @@ def unknown_result(raw_response: str = "", tier: int = -1) -> IntentResult:
     Returns:
         ``IntentResult(intent='unknown', confidence=0.0)``.
     """
+    safe_tier: int = -1
+    if tier is not None:
+        try:
+            safe_tier = int(tier)
+        except (ValueError, TypeError):
+            safe_tier = -1
+
     return IntentResult(
         intent="unknown",
         confidence=0.0,
-        raw_response=raw_response,
-        tier=tier,
+        raw_response=str(raw_response) if raw_response is not None else "",
+        tier=safe_tier,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Transparent outage factory (Milestone 11.2)
+# ---------------------------------------------------------------------------
+
+
+def system_offline_result(error_message: str = "", tier: int = -1) -> IntentResult:
+    """Return the canonical transparent outage ``IntentResult``.
+
+    Constructs a sentinel ``IntentResult`` with intent ``"system_offline"`` and
+    ``confidence = 0.0`` to signal an operational infrastructure outage
+    (such as a connection failure, network timeout, daemon crash, or unreachable
+    backend provider) rather than an AI language comprehension failure.
+
+    This distinction strictly adheres to ethical AI transparency mandates:
+    an infrastructure outage must never be masked as user error or poor phrasing.
+
+    Args:
+        error_message: Explanatory error details or raw provider exception string
+            capturing why the system is offline (stored in ``raw_response`` for telemetry).
+        tier: The integer execution tier where the outage occurred (e.g. 1 for local edge
+            Ollama, 2 for cloud specialist Nebius). Defaults to ``-1`` when unspecified.
+            Numeric strings are safely coerced to int; malformed values or ``None`` default
+            to ``-1``.
+
+    Returns:
+        ``IntentResult`` instance configured with:
+            - ``intent = "system_offline"``
+            - ``confidence = 0.0`` (strictly unactionable)
+            - ``target = None``
+            - ``value = None``
+            - ``raw_response = str(error_message)``
+            - ``tier = safe_tier``
+    """
+    safe_tier: int = -1
+    if tier is not None:
+        try:
+            safe_tier = int(tier)
+        except (ValueError, TypeError):
+            safe_tier = -1
+
+    return IntentResult(
+        intent="system_offline",
+        confidence=0.0,
+        raw_response=str(error_message) if error_message is not None else "",
+        tier=safe_tier,
     )
