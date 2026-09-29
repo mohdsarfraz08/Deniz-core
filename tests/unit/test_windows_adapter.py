@@ -27,3 +27,22 @@ def test_open_app_oserror_surfaces_message():
         msg = adapter.open_app("fake-app-xyz")
     assert "error opening" in msg.lower()
     assert "access denied" in msg.lower()
+
+
+def test_open_app_canonical_aliases_resolved():
+    adapter = WindowsAdapter()
+    with patch("adapters.windows_adapter.os.startfile") as mock_start:
+        assert "my browser opened" in adapter.open_app("my browser").lower()
+        mock_start.assert_called_with("msedge")
+
+        mock_start.reset_mock()
+        assert "vs code opened" in adapter.open_app("vs code").lower()
+        mock_start.assert_called_with("code")
+
+        mock_start.reset_mock()
+        assert "file manager opened" in adapter.open_app("file manager").lower()
+        mock_start.assert_called_with("explorer")
+
+        mock_start.reset_mock()
+        assert "chrome opened" in adapter.open_app("chrome").lower()
+        mock_start.assert_called_with("chrome")

@@ -59,7 +59,10 @@ class CommandParser:
             if text.startswith(keyword + " "):
                 target = text.replace(keyword, "", 1).strip()
                 # Disambiguate "open file" intent vs "open app" intent.
-                # "open file" / "show file" is handled below as read_file.
+                # "open file <name>" is handled below as read_file, unless it refers
+                # to system file manager / file explorer applications.
+                if text.strip() in ("open file manager", "open file explorer"):
+                    return Intent(intent="open_app", target=target)
                 if not any(text.startswith(kw + " file") for kw in self.OPEN_KEYWORDS):
                     return Intent(intent="open_app", target=target)
 
