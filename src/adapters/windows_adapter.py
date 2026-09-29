@@ -7,6 +7,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass
+from typing import Final
 
 import psutil
 
@@ -54,6 +55,48 @@ CRITICAL_PROCESSES = [
 ]
 
 logger = logging.getLogger("WindowsAdapter")
+
+CANONICAL_APP_ALIASES: Final[dict[str, str]] = {
+    # Web Browsers
+    "browser": "msedge",
+    "web browser": "msedge",
+    "internet browser": "msedge",
+    "default browser": "msedge",
+    "edge": "msedge",
+    "edge browser": "msedge",
+    "microsoft edge": "msedge",
+    "chrome": "chrome",
+    "google chrome": "chrome",
+    "chrome browser": "chrome",
+    "brave": "brave",
+    "firefox": "firefox",
+    # Code Editors / IDEs
+    "vs code": "code",
+    "vscode": "code",
+    "visual studio code": "code",
+    "code editor": "code",
+    "code": "code",
+    # File Management
+    "file manager": "explorer",
+    "file explorer": "explorer",
+    "files": "explorer",
+    "explorer": "explorer",
+    # Standard System Tools
+    "notepad": "notepad",
+    "text editor": "notepad",
+    "calc": "calc",
+    "calculator": "calc",
+    "task manager": "taskmgr",
+    "taskmgr": "taskmgr",
+}
+
+
+def normalize_app_target(app_name: str) -> str:
+    """Normalize user-supplied application names/phrases to executable targets."""
+    raw = app_name.strip().lower()
+    if raw.startswith("my "):
+        raw = raw[3:].strip()
+    return CANONICAL_APP_ALIASES.get(raw, app_name.strip())
 
 
 @dataclass
@@ -193,13 +236,15 @@ class WindowsAdapter(BaseAdapter):
             self._register_terminal_launch(canonical, result)
             return result.message
 
+        target = normalize_app_target(app_name)
+
         try:
-            os.startfile(app_name)
+            os.startfile(target)
             return f"{app_name} opened."
         except OSError as e:
             logger.error(
-                "open_app OS failure: app=%r errno=%r detail=%r",
-                app_name, getattr(e, 'winerror', e.errno), str(e),
+                "open_app OS failure: app=%r target=%r errno=%r detail=%r",
+                app_name, target, getattr(e, 'winerror', e.errno), str(e),
             )
             return f"Error opening {app_name}: {e}"
 

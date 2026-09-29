@@ -62,6 +62,18 @@ def test_parse_shutdown_system_is_dangerous_system() -> None:
     assert CommandParser().parse("shutdown system").intent == "dangerous_system"
 
 
+def test_parse_open_file_manager_targets_app_not_read_file() -> None:
+    """Disambiguate 'open file manager' to open_app rather than read_file."""
+    p = CommandParser()
+    it = p.parse("open file manager")
+    assert it.intent == "open_app"
+    assert it.target == "file manager"
+
+    it_exp = p.parse("open file explorer")
+    assert it_exp.intent == "open_app"
+    assert it_exp.target == "file explorer"
+
+
 def test_parse_remind_me_prefix_is_not_implemented() -> None:
     assert CommandParser().parse("remind me at noon").intent == "not_implemented"
 
